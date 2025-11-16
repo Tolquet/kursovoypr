@@ -20,8 +20,8 @@ const BlockCard = () => {
                 </ul>
             </div>
             <div className="stars"></div>
-            <div className="buttons"> 
-                <Link href="/cards/id: "><button>Learn More</button></Link>
+            <div className="buttons">
+                <Link href={{ pathname: '/card/[id]', query: {} }}><button>Learn More</button></Link>
                 <Link href=""><button>Compare</button></Link>
             </div>
         </div>
