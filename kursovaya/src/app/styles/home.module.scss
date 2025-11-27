@@ -1,7 +1,12 @@
 @import "../styles/mixins.scss";
 
-.sectionfirst{
-    width: 100%;    
+
+.section{
+    margin: auto;
+    width: 80%;    
     @include flex-row();
-    padding: 0 10%;
+}
+
+.textsec{
+    width: 40%;
 }

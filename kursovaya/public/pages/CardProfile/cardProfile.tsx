@@ -4,9 +4,9 @@ export default function CardProfile(){
         <>
         <section>
             <div>
-                <Image src="" alt="" />
-                <Image src="" alt="" />
-                <Image src="" alt="" />
+                <Image src="/" alt="" />
+                <Image src="/" alt="" />
+                <Image src="/" alt="" />
             </div>
             <div>
                 <h1>

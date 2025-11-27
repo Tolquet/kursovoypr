@@ -1,21 +1,27 @@
 import FilterPanel from "@/src/widgets/institution-filter/ui/filter";
-import InstitutionList from "@/src/widgets/institution-filter/ui/filtred-list";
+import CardInstitutes from "@/src/widgets/CardInstitutes/cardList";
+import styles from "./styles/style.module.scss"
 
+const institution = [
+  {id: 1,name:'Жопожрунчик',description: 'Топовый универ всея руси',image: "/",categoryIns: ['Универ','100балов','гуманитарий','пук пук']},
+  {id: 2, name:'Жопожрунчик',description: 'Топовый универ всея руси',image: "/",categoryIns: ['Универ','100балов','гуманитарий','пук пук']},
+  {id: 3,name:'Жопожрунчик',description: 'Топовый универ всея руси',image: "/",categoryIns: ['Универ','100балов','гуманитарий','пук пук'],},
+  {id: 4,name:'Жопожрунчик',description: 'Топовый универ всея руси',image: "/",categoryIns: ['Универ','100балов','гуманитарий','пук пук']},
+  { id: 5, name:'Жопожрунчик',description: 'Топовый универ всея руси',image: "/", categoryIns: ['Универ','100балов','гуманитарий','пук пук'],},
+]
 
 export default function FinderPage() {
 
-  return (
+  return (      
     <>
       <div className="finder-page">
         <aside className="filters-sidebar">
-          <FilterPanel
-            filters={filters}
-            onFiltersChange={updateFilters}
-          />
+         
         </aside>
 
         <main className="results-content">
-          <InstitutionList filters={filters} />
+          <h2>Найдено результатов: {institution.length}</h2>
+          <CardInstitutes list={institution} className={styles.inst_grid} />
         </main>
       </div>
     </>

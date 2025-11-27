@@ -40,8 +40,8 @@ export default function Header() {
             </nav>
             <div className={styles.help}>
                 <p>Need help choosing? Contact our educational consultants!</p>
-                <div> <Image src="" alt="" /> <a href="tel:+18001234567">+1 (800) 123-4567</a></div>
-                <div> <Image src="" alt="" /> <a href="mailto:support@globaledu.com">support@globaledu.com</a></div>
+                <div> <Image src="/" alt="" width={30} height={30}/> <a href="tel:+18001234567">+1 (800) 123-4567</a></div>
+                <div> <Image src="/" alt="" width={30} height={30}/> <a href="mailto:support@globaledu.com">support@globaledu.com</a></div>
                 <button>Live Chat</button>
                 <div>ПОН-ПЯТ С 09.00-18.00</div>
             </div>

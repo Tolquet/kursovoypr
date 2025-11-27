@@ -8,12 +8,15 @@
 
     .navbar{
         @include flex-row();
+        justify-content: space-evenly;
         height: 72px;
         justify-content: center;
         gap: 40px;
     }
     .help{
         @include flex-row();
+        justify-content: center;
+        gap: 30px;
         height: 72px;
         background-color: #F0F5FFFF;
         box-shadow: 0px 0px 1px #171a1f, 0px 0px 2px #171a1f14;
