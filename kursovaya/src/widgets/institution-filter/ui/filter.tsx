@@ -170,7 +170,7 @@ export function FilterPanel({
     return `Типы (${selectedLabels.length} выбрано)`;
   };
 
-  // Проверяем, выбраны ли все доступные категории
+  
   const areAllCategoriesSelected = availableCategories.length > 0 && 
     availableCategories.every(cat => filters.selectedCategories.includes(cat.id));
 

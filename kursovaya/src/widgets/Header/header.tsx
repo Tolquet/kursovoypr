@@ -17,7 +17,7 @@ export default function Header() {
                         Global Edu
                     </Link>
                 </div>
-                <div className="header-button">
+                <div className={styles.header_button}>
                     <Link href="/finder?type=university">University</Link>
                     <Link href="/finder?type=college">College</Link>
                     <Link href="/finder?type=school">School</Link>
@@ -25,7 +25,7 @@ export default function Header() {
                     <Link href="/finder">Все заведения</Link>
                 </div>
 
-                <div className="contact">
+                <div className={styles.contact}>
                     <a href="tel:+79677158899">+7 967 715 88 99</a>
                     <a href="mailto:info@globaledu.com">info@globaledu.com</a>
                 </div>
@@ -40,7 +40,7 @@ export default function Header() {
             </nav>
             <div className={styles.help}>
                 <p>Need help choosing? Contact our educational consultants!</p>
-                <div> <Image src="/" alt="" width={30} height={30}/> <a href="tel:+18001234567">+1 (800) 123-4567</a></div>
+                <div> <Image src="/" alt="" width={30} height={30}/> <a href="tel:+18001234567">+7 (800) 123-4567</a></div>
                 <div> <Image src="/" alt="" width={30} height={30}/> <a href="mailto:support@globaledu.com">support@globaledu.com</a></div>
                 <button>Live Chat</button>
                 <div>ПОН-ПЯТ С 09.00-18.00</div>

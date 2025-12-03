@@ -23,4 +23,34 @@
     }
 
 }
+.header_button{
+    display: flex;
+    gap: 10px;
 
+    a{
+        text-decoration: none;
+        color: black;
+    }
+    a:hover{
+        color: rgb(252, 150, 47);
+        font-size: 20px;
+    }
+
+    a:active{
+        color: rgb(252, 150, 47);
+    }
+}
+.contact{
+    
+    display: flex;
+    gap:10px;
+
+    a{
+        text-decoration: none;
+        color: black;
+    }
+    a:hover{
+        color: rgb(252, 150, 47);
+        font-size: 20px;
+    }
+}

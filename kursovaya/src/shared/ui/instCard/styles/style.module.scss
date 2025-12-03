@@ -4,6 +4,7 @@
 .card_body{
     display: flex;
     flex-direction: column;
+    justify-content: center;
     width: 350px;
     height: 482px; 
     background: #FFFFFFFF; /* white */
@@ -12,6 +13,7 @@
     border-color: #DEE1E680; /* neutral-300 */
     border-style: solid; 
     box-shadow: 0px 0px 1px black, 0px 0px 2px #171a1f14; /* shadow-xs */
+    padding: 20px;
 }
 .card_name{
   
@@ -34,12 +36,16 @@
     font-weight: 400; 
     background-color: blue;
     padding: 5px;
+    border-radius: 5px;
     
 }
 .card_category{
  font-size: 14px; 
   line-height: 20px; 
   font-weight: 400; 
+  background-color: grey;
+  padding: 5px;
+  border-radius: 5px;
 }
 .card_description{
     font-size: 16px; 

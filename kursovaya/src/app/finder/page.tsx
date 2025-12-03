@@ -65,11 +65,12 @@ export default function FinderPage() {
   };
 
   return (      
-    <div className="finder-page">
+    <div className={styles.finder_page}>
       <FilterPanel 
         data={filterPanelData}
         onFilterChange={setFilters}
         initialFilters={filters}
+  
       />
       
       <div className="results-content">
