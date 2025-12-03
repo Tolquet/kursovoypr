@@ -1,12 +1,13 @@
 import { InstitutesList } from './types/cardIst'
-
 import InstCard from '@/src/shared/ui/instCard/card'
+
+import styles from "./styles/style.module.scss"
+
 export default function CardInstitutes(cards : InstitutesList){
 
     const{
         list,
         isLoad = false,
-        className,
     } = cards
     
     if (isLoad){
@@ -19,7 +20,7 @@ export default function CardInstitutes(cards : InstitutesList){
 
     
     return(
-        <ul className={`card-list ${className}`}>
+        <ul className={styles.inst_list}>
             {list.map((card) =>(
                 <InstCard key={card.id} {...card} />
             ))}

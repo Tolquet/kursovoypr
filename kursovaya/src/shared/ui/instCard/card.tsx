@@ -1,6 +1,8 @@
 import Image from 'next/image'
 import { Institutes } from '@/src/widgets/CardInstitutes/types/cardIst'
 
+import styles from "./styles/style.module.scss"
+
 
 export default function InstCard(props: Institutes) {
     const {
@@ -13,10 +15,10 @@ export default function InstCard(props: Institutes) {
 
     return (
 
-        <li>
+        <li className={styles.card_body}>
             {image && (
                 <Image
-                    className=""
+                    className={styles.card_img}
                     src={image}
                     alt={name}
                     width={300}
@@ -25,13 +27,16 @@ export default function InstCard(props: Institutes) {
                 />
             )}
 
-            <h3>{name}</h3>
-            <ul>
+            <h3 className={styles.card_name}>{name}</h3>
+            <ul className={styles.card_list_category}>
+                <span className={styles.card_type}>
+                    {types}
+                </span>
                 {categoryIns.map((category, index) => (
-                    <li key={index}>{category}</li>
+                    <li className={styles.card_category} key={index}>{category}</li>
                 ))}
             </ul>
-            <p>{description}</p>
+            <p className={styles.card_description}>{description}</p>
         </li>
     )
 }
