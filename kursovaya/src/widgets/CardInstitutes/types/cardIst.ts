@@ -3,6 +3,7 @@ export interface Institutes {
   name: string;
   description: string;
   image: string;
+  types: string;
   categoryIns:string[];
   
 }

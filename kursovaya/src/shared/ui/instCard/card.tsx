@@ -7,6 +7,7 @@ export default function InstCard(props: Institutes) {
         name,
         description,
         image,
+        types,
         categoryIns,
     } = props
 

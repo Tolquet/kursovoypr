@@ -1,7 +1,12 @@
+
+
 export default function FilterPanel(){
-    return(
+    return (
     <>
-        
+        <div>
+            <input type="text" placeholder="Поиск по названию" />
+
+        </div>
     </>
-    )
-}
+  );
+};

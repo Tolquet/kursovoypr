@@ -1,0 +1,13 @@
+@import "../../../app/styles/mixins.scss";
+
+.footer{
+    @include flex-row();
+    justify-content: space-around   ;
+    background-color: black;
+    color: white;
+    height: 100px;
+}
+.navbar{
+    @include flex-column;
+    gap: 10px  ;
+}

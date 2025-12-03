@@ -1,12 +1,30 @@
 @import "../styles/mixins.scss";
+@import '../styles//variables.scss';
 
 
 .section{
-    margin: auto;
     width: 80%;    
     @include flex-row();
+    margin: 5% auto;
+    justify-content: center;
+
 }
+.homeEnd{
+    display: flex;
+    flex-direction: column;
+    background-color: $primary-color ;
+}
+
 
 .textsec{
     width: 40%;
 }
+.h2{
+    text-align: center;
+    
+}
+.info{
+    align-items: center ;
+    justify-content: space-around;
+}
+
