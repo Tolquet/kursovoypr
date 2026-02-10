@@ -1,147 +1,12 @@
-// src/app/finder/page.tsx
 'use client';
 
-import {FilterPanel} from "@/src/widgets/institution-filter/ui/filter";
-import CardInstitutes from "@/src/widgets/CardInstitutes/cardList";
-import styles from "./styles/style.module.scss"
+import { useEffect, useRef } from 'react';
+import { FilterState } from '@/src/widgets/institution-filter/types/filters';
 import { useUniversalFilter } from '@/src/hooks/useUniversalFilter';
-import { useSearchParams } from 'next/navigation';
-import { useMemo, useEffect } from 'react';
-
-const institution = [
-  {id: 1, name:'Учебное заведение 1',description: 'Топовый универ всея руси1',image: "/",categoryIns: ['100балов','гуманитарий','пук пук1'],types: 'college'},
-  {id: 2, name:'Учебное заведение 2',description: 'Топовый универ всея руси2',image: "/",categoryIns: ['100балов','гуманитарий','пук пук2'],types: 'institute'},
-  {id: 3, name:'Учебное заведение 3',description: 'Топовый универ всея руси3',image: "/",categoryIns: ['100балов','гуманитарий','пук пук3'],types: 'school'},
-  {id: 4, name:'Учебное заведение 4',description: 'Топовый универ всея руси4',image: "/",categoryIns: ['100балов','гуманитарий','пук пук4'],types: 'college'},
-  {id: 5, name:'Учебное заведение 5',description: 'Топовый универ всея руси5',image: "/", categoryIns: ['100балов','гуманитарий','пук пук5'],types: 'college'},
-];
-
-export default function FinderPage() {
-  const searchParams = useSearchParams();
-  
-  // Получаем тип из URL параметров
-  const typeFromUrl = searchParams.get('type');
-  
-  // Создаем начальные фильтры на основе URL
-  const initialFilters = useMemo(() => {
-    if (typeFromUrl) {
-      return {
-        selectedTypes: [typeFromUrl],
-        search: '',
-        selectedCategories: []
-      };
-    }
-    return undefined;
-  }, [typeFromUrl]);
-
-  const {
-    filters,
-    setFilters,
-    filteredData,
-    resetFilters
-  } = useUniversalFilter(institution, initialFilters);
-
-  // Преобразуем данные для FilterPanel
-  const filterPanelData = useMemo(() => {
-    return institution.map(item => ({
-      types: item.types,
-      categoryIns: item.categoryIns
-    }));
-  }, []);
-
-  // Эффект для логирования (для отладки)
-  useEffect(() => {
-    console.log('Текущие фильтры:', filters);
-    console.log('Отфильтровано данных:', filteredData.length);
-  }, [filters, filteredData]);
-
-  // Функция для полного сброса фильтров (включая URL параметры)
-  const handleClearFilters = () => {
-    resetFilters();
-    // Если есть параметры в URL, очищаем их
-    if (typeFromUrl) {
-      window.history.replaceState({}, '', '/finder');
-    }
-  };
-
-  return (      
-    <div className={styles.finder_page}>
-      <FilterPanel 
-        data={filterPanelData}
-        onFilterChange={setFilters}
-        initialFilters={filters}
-  
-      />
-      
-      <div className="results-content">
-        <div className="results-header">
-          <h2>Найдено результатов: {filteredData.length} из {institution.length}</h2>
-          
-          {/* Показываем активный фильтр по типу из URL */}
-          {typeFromUrl && (
-            <div className="active-type-filter">
-              <small>
-                Автоматически применен фильтр по типу: <strong>{getTypeLabel(typeFromUrl)}</strong>
-                <button 
-                  onClick={handleClearFilters}
-                  className="remove-filter-btn"
-                  type="button"
-                >
-                  × Убрать фильтр
-                </button>
-              </small>
-            </div>
-          )}
-          
-          {/* Кнопка сброса если есть активные фильтры */}
-          {(filters.search || filters.selectedTypes.length > 0 || filters.selectedCategories.length > 0) && (
-            <button 
-              onClick={handleClearFilters}
-              className="clear-filters-btn"
-              type="button"
-            >
-              Сбросить все фильтры
-            </button>
-          )}
-        </div>
-        
-        {/* Сообщение если ничего не найдено */}
-        {filteredData.length === 0 ? (
-          <div className="no-results">
-            <h3>Ничего не найдено</h3>
-            <p>Попробуйте изменить параметры фильтрации</p>
-            <button 
-              onClick={handleClearFilters}
-              className="clear-filters-btn"
-              type="button"
-            >
-              Показать все
-            </button>
-          </div>
-        ) : (
-          <>
-            <CardInstitutes 
-              list={filteredData} 
-              className={styles.inst_grid} 
-            />
-            
-            {/* Статистика фильтрации */}
-            {filteredData.length < institution.length && (
-              <div className="filter-stats">
-                <small>
-                  Отфильтровано из {institution.length} записей. 
-                  {filters.selectedTypes.length > 0 && ` Типы: ${filters.selectedTypes.map(t => getTypeLabel(t)).join(', ')}.`}
-                  {filters.selectedCategories.length > 0 && ` Категории: ${filters.selectedCategories.length}.`}
-                  {filters.search && ` Поиск: "${filters.search}".`}
-                </small>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+import { useInstitutes } from '@/src/hooks/useInstitutes';
+import {FilterPanel} from '@/src/widgets/institution-filter/ui/filter';
+import CardList from '@/src/widgets/CardInstitutes/cardList';
+import styles from './styles/style.module.scss';
 
 // Вспомогательная функция для преобразования типа в читаемый формат
 const getTypeLabel = (type: string): string => {
@@ -152,6 +17,200 @@ const getTypeLabel = (type: string): string => {
     'university': 'Университет',
     'academy': 'Академия'
   };
-  
   return typeLabels[type] || type;
 };
+
+export default function FinderPage() {
+  // Используем useRef для отслеживания инициализации без лишних рендеров
+  const isInitializedRef = useRef(false);
+
+  // Получаем данные из API
+  const {
+    institutes,
+    totalCount,
+    isLoading,
+    error,
+    refresh,
+    hasData
+  } = useInstitutes();
+
+  // Инициализируем фильтры после получения данных
+  const {
+    filters,
+    setFilters,
+    filteredData,
+    resetFilters
+  } = useUniversalFilter(institutes);
+
+  // Устанавливаем URL параметры при изменении фильтров
+  useEffect(() => {
+    if (!isInitializedRef.current || typeof window === 'undefined') return;
+
+    const params = new URLSearchParams();
+
+    if (filters.search) params.set('search', filters.search);
+    if (filters.selectedTypes.length > 0) params.set('type', filters.selectedTypes[0]);
+    if (filters.selectedCategories.length > 0) params.set('category', filters.selectedCategories[0]);
+
+    const newUrl = params.toString() ? `/finder?${params.toString()}` : '/finder';
+    window.history.replaceState({}, '', newUrl);
+  }, [filters]);
+
+  // Загружаем фильтры из URL при инициализации
+  useEffect(() => {
+    if (hasData && !isInitializedRef.current && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+
+      const initialFilters: Partial<FilterState> = {
+        search: urlParams.get('search') || '',
+        selectedTypes: urlParams.get('type') ? [urlParams.get('type')!] : [],
+        selectedCategories: urlParams.get('category') ? [urlParams.get('category')!] : []
+      };
+
+      setFilters(initialFilters);
+      isInitializedRef.current = true;
+    }
+  }, [hasData, setFilters]);
+
+  // Состояние загрузки
+  if (isLoading && !hasData) {
+    return (
+      <div className={styles.finder_page}>
+        <div className={styles.results_content}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '200px',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <p style={{ color: '#7f8c8d' }}>Загружаем учебные заведения...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Состояние ошибки
+  if (error && !hasData) {
+    return (
+      <div className={styles.finder_page}>
+        <div className={styles.results_content}>
+          <div style={{
+            textAlign: 'center',
+            padding: '4rem 2rem',
+            color: '#e74c3c'
+          }}>
+            <h3>Ошибка загрузки данных</h3>
+            <p>{error}</p>
+            <button
+              onClick={refresh}
+              style={{
+                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '25px',
+                cursor: 'pointer',
+                marginTop: '1rem'
+              }}
+            >
+              Попробовать снова
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Получаем активный фильтр по типу из URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeTypeFilter = urlParams.get('type');
+
+  return (
+    <div className={styles.finder_page}>
+      <div className={styles.results_content}>
+        <div className={styles.results_header}>
+          <h2>
+            {activeTypeFilter
+              ? `${getTypeLabel(activeTypeFilter)} (${filteredData.length})`
+              : `Все учебные заведения (${filteredData.length})`
+            }
+          </h2>
+
+          {/* Активный фильтр по типу */}
+          {activeTypeFilter && (
+            <div className={styles.active_type_filter}>
+              <small>Фильтр:</small>
+              <strong>{getTypeLabel(activeTypeFilter)}</strong>
+              <button
+                className={styles.remove_filter_btn}
+                onClick={() => {
+                  const newUrl = window.location.pathname;
+                  window.history.pushState({}, '', newUrl);
+                  window.location.reload();
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Кнопка сброса фильтров */}
+          {(filters.search || filters.selectedTypes.length > 0 || filters.selectedCategories.length > 0) && (
+            <button
+              className={styles.clear_filters_btn}
+              onClick={resetFilters}
+            >
+              Сбросить фильтры
+            </button>
+          )}
+        </div>
+
+        {/* Панель фильтрации */}
+        <FilterPanel
+          data={institutes}
+          onFilterChange={setFilters}
+          initialFilters={filters}
+        />
+
+        {/* Результаты поиска */}
+        {filteredData.length > 0 ? (
+          <>
+            <CardList list={filteredData} />
+
+            {/* Статистика фильтрации */}
+            <div className={styles.filter_stats}>
+              <small>
+                Найдено {filteredData.length} из {totalCount} учебных заведений
+                {filters.search && ` по запросу "${filters.search}"`}
+                {filters.selectedTypes.length > 0 && ` типа "${getTypeLabel(filters.selectedTypes[0])}"`}
+                {filters.selectedCategories.length > 0 && ` категории "${filters.selectedCategories[0]}"`}
+              </small>
+            </div>
+          </>
+        ) : (
+          <div className={styles.no_results}>
+            <h3>Ничего не найдено</h3>
+            <p>Попробуйте изменить параметры поиска или сбросить фильтры</p>
+            <button
+              className={styles.clear_filters_btn}
+              onClick={resetFilters}
+            >
+              Сбросить фильтры
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

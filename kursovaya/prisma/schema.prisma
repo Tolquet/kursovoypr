@@ -1,0 +1,40 @@
+// Это ваш файл схемы Prisma.
+// Узнайте больше о нем в документации: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Модель учебного заведения
+model Institute {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  description String   @db.Text
+  image       String?  @db.VarChar(500)
+  types       String   @db.VarChar(50)
+  location    String   @db.VarChar(100)
+  rating      Float    @default(0)
+  tuition     String   @db.VarChar(100)
+  categoryIns String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("institutes")
+}
+
+// Модель пользователя для будущей аутентификации
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}

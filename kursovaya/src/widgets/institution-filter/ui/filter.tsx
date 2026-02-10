@@ -189,119 +189,117 @@ export function FilterPanel({
           className="search-input"
         />
       </div>
-
       {/* Фильтр по типу */}
-      <div className="dropdown-filter-section">
-        <button 
-          className="dropdown-header"
-          onClick={() => setIsTypesOpen(!isTypesOpen)}
-          aria-expanded={isTypesOpen}
-        >
-          <div className="header-content">
-            <h3>{getTypesDropdownTitle()}</h3>
-            <span className="dropdown-icon">
-              {isTypesOpen ? '▲' : '▼'}
-            </span>
-          </div>
-          {filters.selectedTypes.length > 0 && (
-            <span className="selected-badge">
-              {filters.selectedTypes.length}
-            </span>
+      <div className='dropdown-filters'>
+        <div className="dropdown-filter-section">
+          <button
+            className="dropdown-header"
+            onClick={() => setIsTypesOpen(!isTypesOpen)}
+            aria-expanded={isTypesOpen}
+          >
+            <div className="header-content">
+              <h3>{getTypesDropdownTitle()}</h3>
+              <span className="dropdown-icon">
+                {isTypesOpen ? '▲' : '▼'}
+              </span>
+            </div>
+            {filters.selectedTypes.length > 0 && (
+              <span className="selected-badge">
+                {filters.selectedTypes.length}
+              </span>
+            )}
+          </button>
+          {isTypesOpen && (
+            <div className="dropdown-content">
+              {/* Кнопка "Выбрать все" для типов */}
+              <div className="dropdown-actions">
+                <button
+                  onClick={handleSelectAllTypes}
+                  className="select-all-btn"
+                  type="button"
+                >
+                  {filters.selectedTypes.length === filterOptions.types.length
+                    ? 'Снять все'
+                    : 'Выбрать все'}
+                </button>
+              </div>
+        
+              {/* Список типов */}
+              <div className="options-list">
+                {filterOptions.types.map(option => (
+                  <div key={option.id} className={`filter-option ${option.count === 0 ? 'disabled' : ''}`}>
+                    <input
+                      type="checkbox"
+                      id={`type-${option.id}`}
+                      checked={filters.selectedTypes.includes(option.id)}
+                      onChange={() => handleTypeToggle(option.id)}
+                      disabled={option.count === 0}
+                    />
+                    <label htmlFor={`type-${option.id}`}>
+                      <span className="option-label">{option.label}</span>
+                      <span className="option-count">({option.count})</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-        </button>
-
-        {isTypesOpen && (
-          <div className="dropdown-content">
-            {/* Кнопка "Выбрать все" для типов */}
-            <div className="dropdown-actions">
-              <button 
-                onClick={handleSelectAllTypes}
-                className="select-all-btn"
-                type="button"
-              >
-                {filters.selectedTypes.length === filterOptions.types.length 
-                  ? 'Снять все' 
-                  : 'Выбрать все'}
-              </button>
+        </div>
+        {/* Фильтр по категориям */}
+        <div className="dropdown-filter-section">
+          <button
+            className="dropdown-header"
+            onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+            aria-expanded={isCategoriesOpen}
+          >
+            <div className="header-content">
+              <h3>{getCategoriesDropdownTitle()}</h3>
+              <span className="dropdown-icon">
+                {isCategoriesOpen ? '▲' : '▼'}
+              </span>
             </div>
-            
-            {/* Список типов */}
-            <div className="options-list">
-              {filterOptions.types.map(option => (
-                <div key={option.id} className={`filter-option ${option.count === 0 ? 'disabled' : ''}`}>
-                  <input
-                    type="checkbox"
-                    id={`type-${option.id}`}
-                    checked={filters.selectedTypes.includes(option.id)}
-                    onChange={() => handleTypeToggle(option.id)}
-                    disabled={option.count === 0}
-                  />
-                  <label htmlFor={`type-${option.id}`}>
-                    <span className="option-label">{option.label}</span>
-                    <span className="option-count">({option.count})</span>
-                  </label>
-                </div>
-              ))}
+            {filters.selectedCategories.length > 0 && (
+              <span className="selected-badge">
+                {filters.selectedCategories.length}
+              </span>
+            )}
+          </button>
+          {isCategoriesOpen && (
+            <div className="dropdown-content">
+              {/* Кнопка "Выбрать все" для категорий */}
+              <div className="dropdown-actions">
+                <button
+                  onClick={handleSelectAllCategories}
+                  className="select-all-btn"
+                  type="button"
+                >
+                  {areAllCategoriesSelected
+                    ? 'Снять все'
+                    : 'Выбрать все'}
+                </button>
+              </div>
+        
+              {/* Список категорий */}
+              <div className="options-list">
+                {filterOptions.categories.map(option => (
+                  <div key={option.id} className={`filter-option ${option.count === 0 ? 'disabled' : ''}`}>
+                    <input
+                      type="checkbox"
+                      id={`category-${option.id}`}
+                      checked={filters.selectedCategories.includes(option.id)}
+                      onChange={() => handleCategoryToggle(option.id)}
+                      disabled={option.count === 0}
+                    />
+                    <label htmlFor={`category-${option.id}`}>
+                      <span className="option-label">{option.label}</span>
+                      <span className="option-count">({option.count})</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Фильтр по категориям */}
-      <div className="dropdown-filter-section">
-        <button 
-          className="dropdown-header"
-          onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-          aria-expanded={isCategoriesOpen}
-        >
-          <div className="header-content">
-            <h3>{getCategoriesDropdownTitle()}</h3>
-            <span className="dropdown-icon">
-              {isCategoriesOpen ? '▲' : '▼'}
-            </span>
-          </div>
-          {filters.selectedCategories.length > 0 && (
-            <span className="selected-badge">
-              {filters.selectedCategories.length}
-            </span>
           )}
-        </button>
-
-        {isCategoriesOpen && (
-          <div className="dropdown-content">
-            {/* Кнопка "Выбрать все" для категорий */}
-            <div className="dropdown-actions">
-              <button 
-                onClick={handleSelectAllCategories}
-                className="select-all-btn"
-                type="button"
-              >
-                {areAllCategoriesSelected 
-                  ? 'Снять все' 
-                  : 'Выбрать все'}
-              </button>
-            </div>
-            
-            {/* Список категорий */}
-            <div className="options-list">
-              {filterOptions.categories.map(option => (
-                <div key={option.id} className={`filter-option ${option.count === 0 ? 'disabled' : ''}`}>
-                  <input
-                    type="checkbox"
-                    id={`category-${option.id}`}
-                    checked={filters.selectedCategories.includes(option.id)}
-                    onChange={() => handleCategoryToggle(option.id)}
-                    disabled={option.count === 0}
-                  />
-                  <label htmlFor={`category-${option.id}`}>
-                    <span className="option-label">{option.label}</span>
-                    <span className="option-count">({option.count})</span>
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Сброс фильтров */}

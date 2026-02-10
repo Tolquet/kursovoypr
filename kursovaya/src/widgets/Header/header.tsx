@@ -9,7 +9,7 @@ export default function Header() {
                     <Link href="/">
                         <Image
                             className=""
-                            src=""
+                            src="/"
                             alt=""
                             width={20}
                             height={20}

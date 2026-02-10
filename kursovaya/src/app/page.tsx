@@ -15,7 +15,7 @@ export default function Home() {
             <input type="submit" placeholder="search" />
           </form>
         </div>
-        <div><Image src="/" alt="" width={560} height={373} /></div>
+        <div><Image src="/images/пвапавпав.jpg" alt="" width={560} height={373} /></div>
       </section>
 
       <section className={styles.sectionfirst}>

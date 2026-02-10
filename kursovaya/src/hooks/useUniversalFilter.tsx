@@ -14,12 +14,13 @@ export function useUniversalFilter(data: Institutes[], initialFilters?: Partial<
   // Фильтрация данных
   const filteredData = useMemo(() => {
     return data.filter(item => {
-      // Фильтр по поиску
+      // Фильтр по поиску (расширенный)
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesSearch = 
           item.name.toLowerCase().includes(searchLower) ||
-          item.description.toLowerCase().includes(searchLower);
+          item.description.toLowerCase().includes(searchLower) ||
+          item.location.toLowerCase().includes(searchLower);
         
         if (!matchesSearch) return false;
       }
@@ -58,10 +59,24 @@ export function useUniversalFilter(data: Institutes[], initialFilters?: Partial<
     setFilters(prev => ({ ...prev, ...newFilters }));
   }, []);
 
+  // Получение уникальных значений для фильтров
+  const availableFilters = useMemo(() => {
+    const types = [...new Set(data.map(item => item.types))];
+    const categories = [...new Set(data.flatMap(item => item.categoryIns))];
+    const locations = [...new Set(data.map(item => item.location))];
+
+    return {
+      types,
+      categories,
+      locations
+    };
+  }, [data]);
+
   return {
     filters,
     setFilters: updateFilters,
     filteredData,
-    resetFilters
+    resetFilters,
+    availableFilters
   };
 }
