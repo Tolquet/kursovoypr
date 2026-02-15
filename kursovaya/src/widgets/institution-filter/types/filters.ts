@@ -1,4 +1,3 @@
-
 export interface FilterState {
   search: string;
   selectedTypes: string[];
@@ -23,4 +22,5 @@ export interface FilterPanelProps {
   }>;
   onFilterChange: (filters: FilterState) => void;
   initialFilters?: Partial<FilterState>;
+  currentFilters?: FilterState; // Текущие фильтры для умного подсчета
 }

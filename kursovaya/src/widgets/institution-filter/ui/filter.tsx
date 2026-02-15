@@ -1,5 +1,5 @@
 // src/widgets/institution-filter/ui/filter.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { FilterPanelProps, FilterState } from '@/src/widgets/institution-filter/types/filters';
 import "../styles/filter.scss"
 
@@ -19,7 +19,8 @@ const getTypeLabel = (type: string): string => {
 export function FilterPanel({ 
   data, 
   onFilterChange,
-  initialFilters 
+  initialFilters,
+  currentFilters
 }: FilterPanelProps) {
   // Состояние фильтров с учетом initialFilters через useMemo
   const initialFilterState = useMemo((): FilterState => ({
@@ -32,6 +33,70 @@ export function FilterPanel({
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isTypesOpen, setIsTypesOpen] = useState(true); // Типы открыты по умолчанию
 
+  // Функция для подсчета количества с учетом текущих фильтров
+  const getFilteredCount = useCallback((
+    itemType: string,
+    filterType: 'type' | 'category',
+    currentFilters: FilterState
+  ): number => {
+    return data.filter(item => {
+      // Проверяем соответствие текущему типу/категории
+      if (filterType === 'type') {
+        if (item.types !== itemType) return false;
+      } else {
+        if (!item.categoryIns.includes(itemType)) return false;
+      }
+
+      // Применяем текущие фильтры поиска
+      if (currentFilters.search) {
+        const searchLower = currentFilters.search.toLowerCase();
+        const matchesSearch = 
+          item.types.toLowerCase().includes(searchLower) ||
+          item.categoryIns.some(cat => cat.toLowerCase().includes(searchLower));
+        
+        if (!matchesSearch) return false;
+      }
+
+      // Применяем текущие фильтры по типам (не включая текущий тип)
+      if (currentFilters.selectedTypes.length > 0) {
+        if (filterType === 'type') {
+          // Если мы считаем для типа, проверяем другие выбранные типы
+          const otherSelectedTypes = currentFilters.selectedTypes.filter(t => t !== itemType);
+          if (otherSelectedTypes.length > 0 && !otherSelectedTypes.includes(item.types)) {
+            return false;
+          }
+        } else {
+          // Если мы считаем для категории, проверяем все выбранные типы
+          if (!currentFilters.selectedTypes.includes(item.types)) {
+            return false;
+          }
+        }
+      }
+
+      // Применяем текущие фильтры по категориям (не включая текущую категорию)
+      if (currentFilters.selectedCategories.length > 0) {
+        if (filterType === 'category') {
+          // Если мы считаем для категории, проверяем другие выбранные категории
+          const otherSelectedCategories = currentFilters.selectedCategories.filter(c => c !== itemType);
+          if (otherSelectedCategories.length > 0) {
+            const hasMatchingCategory = otherSelectedCategories.some(cat =>
+              item.categoryIns.includes(cat)
+            );
+            if (!hasMatchingCategory) return false;
+          }
+        } else {
+          // Если мы считаем для типа, проверяем все выбранные категории
+          const hasMatchingCategory = currentFilters.selectedCategories.some(cat =>
+            item.categoryIns.includes(cat)
+          );
+          if (!hasMatchingCategory) return false;
+        }
+      }
+
+      return true;
+    }).length;
+  }, [data]);
+
   // Автоматически собираем все уникальные типы и категории из данных
   const filterOptions = useMemo(() => {
     // Собираем все уникальные типы
@@ -42,27 +107,28 @@ export function FilterPanel({
     const allCategories = data.flatMap(item => item.categoryIns);
     const uniqueCategories = [...new Set(allCategories)];
     
-    // Считаем количество для каждого типа
+    // Используем текущие фильтры для умного подсчета
+    const filtersToUse = currentFilters || filters;
+    
+    // Считаем количество для каждого типа с учетом текущих фильтров
     const typeOptions = uniqueTypes.map(type => ({
       id: type,
       label: getTypeLabel(type),
-      count: data.filter(item => item.types === type).length
+      count: getFilteredCount(type, 'type', filtersToUse)
     })).sort((a, b) => b.count - a.count); // Сортируем по количеству
     
-    // Считаем количество для каждой категории
+    // Считаем количество для каждой категории с учетом текущих фильтров
     const categoryOptions = uniqueCategories.map(category => ({
       id: category,
       label: category,
-      count: data.filter(item => 
-        item.categoryIns.includes(category)
-      ).length
+      count: getFilteredCount(category, 'category', filtersToUse)
     })).sort((a, b) => b.count - a.count); // Сортируем по количеству
 
     return {
       types: typeOptions,
       categories: categoryOptions
     };
-  }, [data]);
+  }, [data, currentFilters, filters, getFilteredCount]);
 
   // Доступные категории (с количеством > 0)
   const availableCategories = useMemo(() => 
