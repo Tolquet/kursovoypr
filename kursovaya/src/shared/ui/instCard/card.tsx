@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import { Institutes } from '@/src/widgets/CardInstitutes/types/cardIst'
-import style from './styles/style.module.scss'
 
+// Функция для получения цвета рейтинга
 const getRatingColor = (rating: number): string => {
   if (rating >= 4.7) return '#2E7D32'; // Зеленый
   if (rating >= 4.4) return '#388E3C'; // Светло-зеленый
@@ -9,6 +9,7 @@ const getRatingColor = (rating: number): string => {
   return '#D32F2F'; // Красный
 };
 
+// Функция для получения иконки типа учреждения
 const getTypeIcon = (type: string): string => {
   const icons: Record<string, string> = {
     'university': '🎓',
@@ -74,10 +75,8 @@ export default function InstCard(props: Institutes) {
                 <div className="card-categories">
                     {categoryIns.slice(0, 3).map((category, index) => (
                         <span key={index} className="category-tag">
-                            {category},
+                            {category}
                         </span>
-
-        
                     ))}
                     {categoryIns.length > 3 && (
                         <span className="more-categories">
