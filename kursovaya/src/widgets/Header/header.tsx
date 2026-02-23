@@ -3,10 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import styles from '../Header/styles/header.module.scss';
 
 export default function Header() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const handleTypeClick = (type: string | null) => {
+    if (type) {
+      router.push(`/finder?type=${type}`);
+    } else {
+      router.push('/finder');
+    }
+  };
 
   return (
     <header className={styles.header}>
@@ -24,11 +34,10 @@ export default function Header() {
           </Link>
         </div>
         <div className={styles.header_button}>
-          <Link href="/finder?type=university">University</Link>
-          <Link href="/finder?type=college">College</Link>
-          <Link href="/finder?type=school">School</Link>
-          {/* Или общая страница поиска */}
-          <Link href="/finder">Все заведения</Link>
+          <button onClick={() => handleTypeClick('university')} className={styles.nav_link}>University</button>
+          <button onClick={() => handleTypeClick('college')} className={styles.nav_link}>College</button>
+          <button onClick={() => handleTypeClick('school')} className={styles.nav_link}>School</button>
+          <button onClick={() => handleTypeClick(null)} className={styles.nav_link}>Все заведения</button>
         </div>
 
         <div className={styles.contact}>

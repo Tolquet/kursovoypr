@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { FilterState } from '@/src/widgets/institution-filter/types/filters';
 import { useUniversalFilter } from '@/src/hooks/useUniversalFilter';
 import { useInstitutes } from '@/src/hooks/useInstitutes';
@@ -21,6 +21,9 @@ const getTypeLabel = (type: string): string => {
 };
 
 export default function FinderPage() {
+  // Используем useState для отслеживания URL параметров
+  const [urlParams, setUrlParams] = useState('');
+  
   // Используем useRef для отслеживания инициализации без лишних рендеров
   const isInitializedRef = useRef(false);
   const lastUrlRef = useRef('');
@@ -48,10 +51,11 @@ export default function FinderPage() {
     if (typeof window === 'undefined') return {};
     
     const urlParams = new URLSearchParams(window.location.search);
+    const currentType = urlParams.get('type');
 
     return {
       search: urlParams.get('search') || '',
-      selectedTypes: urlParams.get('type') ? [urlParams.get('type')!] : [],
+      selectedTypes: currentType ? [currentType] : [],
       selectedCategories: urlParams.get('category') ? [urlParams.get('category')!] : []
     };
   }, []);
@@ -75,43 +79,46 @@ export default function FinderPage() {
     }
   }, [filters]);
 
-  // Загружаем фильтры из URL при инициализации и при изменении URL
+  // Слушаем изменения URL параметров напрямую
   useEffect(() => {
-    if (!hasData || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
 
-    const currentUrl = window.location.href;
-    
-    // Проверяем, изменился ли URL или это первая инициализация
-    if (!isInitializedRef.current || currentUrl !== lastUrlRef.current) {
-      const urlFilters = getFiltersFromUrl();
-      
-      // Обновляем фильтры только если URL параметры изменились
-      setFilters(urlFilters);
-      
-      isInitializedRef.current = true;
-      lastUrlRef.current = currentUrl;
-    }
-  }, [hasData, getFiltersFromUrl, setFilters]);
-
-  // Слушаем изменения URL (например, при навигации из Header)
-  useEffect(() => {
-    const handleUrlChange = () => {
-      if (hasData && isInitializedRef.current) {
-        const urlFilters = getFiltersFromUrl();
-        setFilters(urlFilters);
-        lastUrlRef.current = window.location.href;
+    const checkUrlParams = () => {
+      const currentParams = window.location.search;
+      if (currentParams !== urlParams) {
+        console.log('Обнаружено изменение URL параметров:', currentParams);
+        setUrlParams(currentParams);
+        
+        if (hasData && isInitializedRef.current) {
+          const urlFilters = getFiltersFromUrl();
+          console.log('Обновление фильтров из URL:', urlFilters);
+          setFilters(urlFilters);
+          lastUrlRef.current = window.location.href;
+        }
       }
     };
 
-    // Слушаем события навигации
-    window.addEventListener('popstate', handleUrlChange);
-    
-    // Проверяем изменения URL при загрузке компонента
-    handleUrlChange();
+    // Проверяем при загрузке
+    checkUrlParams();
+
+    // Используем setInterval для проверки изменений
+    const urlCheckInterval = setInterval(checkUrlParams, 100);
 
     return () => {
-      window.removeEventListener('popstate', handleUrlChange);
+      clearInterval(urlCheckInterval);
     };
+  }, [urlParams, hasData, getFiltersFromUrl, setFilters]);
+
+  // Инициализация при первом рендере
+  useEffect(() => {
+    if (hasData && !isInitializedRef.current && typeof window !== 'undefined') {
+      const urlFilters = getFiltersFromUrl();
+      console.log('Первая инициализация фильтров:', urlFilters);
+      setFilters(urlFilters);
+      isInitializedRef.current = true;
+      lastUrlRef.current = window.location.href;
+      setUrlParams(window.location.search);
+    }
   }, [hasData, getFiltersFromUrl, setFilters]);
 
   // Состояние загрузки
@@ -175,8 +182,8 @@ export default function FinderPage() {
   }
 
   // Получаем активный фильтр по типу из URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const activeTypeFilter = urlParams.get('type');
+  const urlParamsData = new URLSearchParams(window.location.search);
+  const activeTypeFilter = urlParamsData.get('type');
 
   return (
     <div className={styles.finder_page}>
@@ -224,6 +231,7 @@ export default function FinderPage() {
           onFilterChange={setFilters}
           initialFilters={filters}
           currentFilters={filters}
+          key={JSON.stringify(filters)} // Принудительный перерендер при изменении фильтров
         />
 
         {/* Результаты поиска */}
