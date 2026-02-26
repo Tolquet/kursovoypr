@@ -1,6 +1,13 @@
-.inst_list{
-    margin: 5%;
-    display: grid;
-    grid-template-columns:1fr 1fr 1fr 1fr;
-    row-gap: 5%;
+.inst_list {
+    width: 100%;
+    max-width: 100vw;
+    padding: 0 16px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 16px;
+    box-sizing: border-box;
+    overflow: hidden;
 }

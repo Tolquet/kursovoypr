@@ -117,7 +117,6 @@ export default function FinderPage() {
       setFilters(urlFilters);
       isInitializedRef.current = true;
       lastUrlRef.current = window.location.href;
-      setUrlParams(window.location.search);
     }
   }, [hasData, getFiltersFromUrl, setFilters]);
 
@@ -181,9 +180,10 @@ export default function FinderPage() {
     );
   }
 
-  // Получаем активный фильтр по типу из URL
-  const urlParamsData = new URLSearchParams(window.location.search);
-  const activeTypeFilter = urlParamsData.get('type');
+  // Получаем активный фильтр по типу из URL (только на клиенте)
+  const activeTypeFilter = typeof window !== 'undefined' 
+    ? new URLSearchParams(window.location.search).get('type')
+    : null;
 
   return (
     <div className={styles.finder_page}>
@@ -204,9 +204,11 @@ export default function FinderPage() {
               <button
                 className={styles.remove_filter_btn}
                 onClick={() => {
-                  const newUrl = window.location.pathname;
-                  window.history.pushState({}, '', newUrl);
-                  window.location.reload();
+                  if (typeof window !== 'undefined') {
+                    const newUrl = window.location.pathname;
+                    window.history.pushState({}, '', newUrl);
+                    window.location.reload();
+                  }
                 }}
               >
                 ✕
@@ -215,7 +217,7 @@ export default function FinderPage() {
           )}
 
           {/* Кнопка сброса фильтров */}
-          {(filters.search || filters.selectedTypes.length > 0 || filters.selectedCategories.length > 0) && (
+          {(filters.search || filters.selectedTypes.length > 0 || filters.selectedCategories.length > 0 || filters.selectedCity || filters.tuitionRange) && (
             <button
               className={styles.clear_filters_btn}
               onClick={resetFilters}
@@ -246,6 +248,7 @@ export default function FinderPage() {
                 {filters.search && ` по запросу "${filters.search}"`}
                 {filters.selectedTypes.length > 0 && ` типа "${getTypeLabel(filters.selectedTypes[0])}"`}
                 {filters.selectedCategories.length > 0 && ` категории "${filters.selectedCategories[0]}"`}
+                {filters.selectedCity && ` в городе "${filters.selectedCity}"`}
               </small>
             </div>
           </>

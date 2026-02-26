@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { Institutes } from '@/src/widgets/CardInstitutes/types/cardIst'
+import styles from './styles/style.module.scss'
 
 // Функция для получения цвета рейтинга
 const getRatingColor = (rating: number): string => {
@@ -21,6 +22,24 @@ const getTypeIcon = (type: string): string => {
   return icons[type] || '🏢';
 };
 
+// Функция для форматирования цены
+const formatPrice = (value: number | undefined): string => {
+  if (value === undefined || value === null) return 'По запросу';
+  return new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
+};
+
+// Функция для получения типа учреждения на русском
+const getTypeLabel = (type: string): string => {
+  const labels: Record<string, string> = {
+    'university': 'Университет',
+    'college': 'Колледж',
+    'institute': 'Институт',
+    'school': 'Школа',
+    'academy': 'Академия'
+  };
+  return labels[type] || type;
+};
+
 export default function InstCard(props: Institutes) {
     const {
         name,
@@ -31,56 +50,70 @@ export default function InstCard(props: Institutes) {
         location,
         rating,
         tuition,
+        city,
+        minTuition,
+        maxTuition,
     } = props
 
+    // Формируем строку стоимости
+    const tuitionDisplay = minTuition && maxTuition 
+      ? `от ${formatPrice(minTuition)} до ${formatPrice(maxTuition)}`
+      : tuition || 'По запросу';
+
     return (
-        <li className="card_institute">
-            <div className="card_image">
+        <li className={styles.card_institute}>
+            <div className={styles.card_image}>
                 {image && (
                     <Image
                         src={image}
                         alt={name}
                         width={400}
                         height={200}
-                        className="card-image"
+                        className={styles.cardImage}
                     />
                 )}
-                <div className="type-badge">
-                    <span className="type-icon">{getTypeIcon(types)}</span>
-                    <span className="type-text">{types}</span>
+                <div className={styles.typeBadge}>
+                    <span className={styles.typeIcon}>{getTypeIcon(types)}</span>
+                    <span className={styles.typeText}>{getTypeLabel(types)}</span>
                 </div>
+                {city && (
+                    <div className={styles.cityBadge}>
+                        <span className={styles.cityIcon}>🏙️</span>
+                        <span className={styles.cityText}>{city}</span>
+                    </div>
+                )}
             </div>
 
-            <div className="card-content">
-                <h3 className="card-title">{name}</h3>
+            <div className={styles.cardContent}>
+                <h3 className={styles.cardTitle}>{name}</h3>
                 
-                <div className="card-meta">
-                    <div className="location">
-                        <span className="location-icon">📍</span>
-                        <span className="location-text">{location}</span>
+                <div className={styles.cardMeta}>
+                    <div className={styles.location}>
+                        <span className={styles.locationIcon}>📍</span>
+                        <span className={styles.locationText}>{location}</span>
                     </div>
-                    <div className="rating" style={{ color: getRatingColor(rating) }}>
-                        <span className="rating-stars">★</span>
-                        <span className="rating-value">{rating}</span>
+                    <div className={styles.rating} style={{ color: getRatingColor(rating) }}>
+                        <span className={styles.ratingStars}>★</span>
+                        <span className={styles.ratingValue}>{rating.toFixed(1)}</span>
                     </div>
                 </div>
 
-                <p className="card-description">{description}</p>
+                <p className={styles.cardDescription}>{description}</p>
 
-                <div className="tuition-info">
-                    <span className="tuition-label">Стоимость:</span>
-                    <span className="tuition-value">{tuition}</span>
+                <div className={styles.tuitionInfo}>
+                    <span className={styles.tuitionLabel}>Стоимость обучения:</span>
+                    <span className={styles.tuitionValue}>{tuitionDisplay}</span>
                 </div>
 
-                <div className="card-categories">
-                    {categoryIns.slice(0, 3).map((category, index) => (
-                        <span key={index} className="category-tag">
+                <div className={styles.cardCategories}>
+                    {categoryIns.slice(0, 4).map((category, index) => (
+                        <span key={index} className={styles.categoryTag}>
                             {category}
                         </span>
                     ))}
-                    {categoryIns.length > 3 && (
-                        <span className="more-categories">
-                            +{categoryIns.length - 3}
+                    {categoryIns.length > 4 && (
+                        <span className={styles.moreCategories}>
+                            +{categoryIns.length - 4}
                         </span>
                     )}
                 </div>

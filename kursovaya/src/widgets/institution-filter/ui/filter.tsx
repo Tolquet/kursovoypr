@@ -16,6 +16,11 @@ const getTypeLabel = (type: string): string => {
   return typeLabels[type] || type;
 };
 
+// Функция для форматирования цены
+const formatPrice = (value: number): string => {
+  return new Intl.NumberFormat('ru-RU').format(value);
+};
+
 export function FilterPanel({ 
   data, 
   onFilterChange,
@@ -26,12 +31,16 @@ export function FilterPanel({
   const initialFilterState = useMemo((): FilterState => ({
     search: initialFilters?.search || '',
     selectedTypes: initialFilters?.selectedTypes || [],
-    selectedCategories: initialFilters?.selectedCategories || []
+    selectedCategories: initialFilters?.selectedCategories || [],
+    selectedCity: initialFilters?.selectedCity || '',
+    tuitionRange: initialFilters?.tuitionRange || { min: 0, max: 1000000 }
   }), [initialFilters]);
 
   const [filters, setFilters] = useState<FilterState>(initialFilterState);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isTypesOpen, setIsTypesOpen] = useState(true); // Типы открыты по умолчанию
+  const [isCityOpen, setIsCityOpen] = useState(false);
+  const [isTuitionOpen, setIsTuitionOpen] = useState(false);
 
   // Функция для подсчета количества с учетом текущих фильтров
   const getFilteredCount = useCallback((
@@ -136,6 +145,26 @@ export function FilterPanel({
     [filterOptions.categories]
   );
 
+  // Уникальные города
+  const cities = useMemo(() => {
+    const allCities = data.map(item => item.city).filter(Boolean) as string[];
+    return [...new Set(allCities)].sort();
+  }, [data]);
+
+  // Диапазон цен
+  const tuitionRange = useMemo(() => {
+    const allTuitions = data
+      .map(item => item.minTuition)
+      .filter((t): t is number => typeof t === 'number');
+    
+    if (allTuitions.length === 0) return { min: 0, max: 1000000 };
+    
+    return {
+      min: Math.min(...allTuitions),
+      max: Math.max(...allTuitions)
+    };
+  }, [data]);
+
   // Обработчик изменения фильтров
   const updateFilters = (newFilters: Partial<FilterState>) => {
     const updated = { ...filters, ...newFilters };
@@ -168,10 +197,34 @@ export function FilterPanel({
     const resetFilters: FilterState = {
       search: '',
       selectedTypes: [],
-      selectedCategories: []
+      selectedCategories: [],
+      selectedCity: '',
+      tuitionRange: { min: tuitionRange.min, max: tuitionRange.max }
     };
     setFilters(resetFilters);
     onFilterChange(resetFilters);
+  };
+
+  // Обработчик изменения города
+  const handleCityChange = (city: string) => {
+    updateFilters({ selectedCity: city });
+  };
+
+  // Обработчик изменения диапазона цен
+  const handleTuitionRangeChange = (type: 'min' | 'max', value: number) => {
+    const currentRange = filters.tuitionRange;
+    const newRange = { ...currentRange, [type]: value };
+    
+    // Минимум не может быть больше максимума
+    if (type === 'min' && value > currentRange.max) {
+      newRange.max = value;
+    }
+    // Максимум не может быть меньше минимума
+    if (type === 'max' && value < currentRange.min) {
+      newRange.min = value;
+    }
+    
+    updateFilters({ tuitionRange: newRange });
   };
 
   const handleSelectAllCategories = () => {
@@ -179,7 +232,7 @@ export function FilterPanel({
     const allSelected = allCategoryIds.every(id => 
       filters.selectedCategories.includes(id)
     );
-    
+  
     const newCategories = allSelected
       ? filters.selectedCategories.filter(id => !allCategoryIds.includes(id))
       : [...filters.selectedCategories, ...allCategoryIds.filter(id => 
@@ -208,7 +261,7 @@ export function FilterPanel({
     if (filters.selectedCategories.length === 0) {
       return 'Категории';
     }
-    
+  
     const selectedLabels = filterOptions.categories
       .filter(option => filters.selectedCategories.includes(option.id))
       .map(option => option.label);
@@ -240,6 +293,24 @@ export function FilterPanel({
   const areAllCategoriesSelected = availableCategories.length > 0 && 
     availableCategories.every(cat => filters.selectedCategories.includes(cat.id));
 
+  const getCityDropdownTitle = () => {
+    if (!filters.selectedCity) {
+      return 'Город';
+    }
+    return `Город: ${filters.selectedCity}`;
+  };
+
+  const getTuitionDropdownTitle = () => {
+    const { min, max } = filters.tuitionRange;
+    const defaultRange = tuitionRange;
+    const isDefault = min === defaultRange.min && max === defaultRange.max;
+    
+    if (isDefault) {
+      return 'Стоимость обучения';
+    }
+    return `Стоимость: ${formatPrice(min)} - ${formatPrice(max)} ₽`;
+  };
+
   return (
     <div className="filter-panel">
       {/* Поиск */}
@@ -255,6 +326,117 @@ export function FilterPanel({
           className="search-input"
         />
       </div>
+
+      {/* Фильтр по городу */}
+      {cities.length > 0 && (
+        <div className="dropdown-filter-section">
+          <button
+            className="dropdown-header"
+            onClick={() => setIsCityOpen(!isCityOpen)}
+            aria-expanded={isCityOpen}
+          >
+            <div className="header-content">
+              <h3>{getCityDropdownTitle()}</h3>
+              <span className="dropdown-icon">
+                {isCityOpen ? '▲' : '▼'}
+              </span>
+            </div>
+            {filters.selectedCity && (
+              <span className="selected-badge">1</span>
+            )}
+          </button>
+          {isCityOpen && (
+            <div className="dropdown-content">
+              <div className="options-list">
+                <div 
+                  className={`filter-option ${!filters.selectedCity ? 'selected' : ''}`}
+                  onClick={() => handleCityChange('')}
+                >
+                  <input
+                    type="radio"
+                    id="city-all"
+                    name="city"
+                    checked={!filters.selectedCity}
+                    onChange={() => handleCityChange('')}
+                  />
+                  <label htmlFor="city-all">
+                    <span className="option-label">Все города</span>
+                  </label>
+                </div>
+                {cities.map(city => (
+                  <div 
+                    key={city} 
+                    className={`filter-option ${filters.selectedCity === city ? 'selected' : ''}`}
+                    onClick={() => handleCityChange(city)}
+                  >
+                    <input
+                      type="radio"
+                      id={`city-${city}`}
+                      name="city"
+                      checked={filters.selectedCity === city}
+                      onChange={() => handleCityChange(city)}
+                    />
+                    <label htmlFor={`city-${city}`}>
+                      <span className="option-label">{city}</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Фильтр по стоимости */}
+      <div className="dropdown-filter-section">
+        <button
+          className="dropdown-header"
+          onClick={() => setIsTuitionOpen(!isTuitionOpen)}
+          aria-expanded={isTuitionOpen}
+        >
+          <div className="header-content">
+            <h3>{getTuitionDropdownTitle()}</h3>
+            <span className="dropdown-icon">
+              {isTuitionOpen ? '▲' : '▼'}
+            </span>
+          </div>
+        </button>
+        {isTuitionOpen && (
+          <div className="dropdown-content">
+            <div className="tuition-range">
+              <div className="tuition-input-group">
+                <label>От:</label>
+                <input
+                  type="number"
+                  value={filters.tuitionRange.min}
+                  onChange={(e) => handleTuitionRangeChange('min', Number(e.target.value))}
+                  min={tuitionRange.min}
+                  max={tuitionRange.max}
+                  className="tuition-input"
+                />
+                <span className="tuition-currency">₽</span>
+              </div>
+              <div className="tuition-input-group">
+                <label>До:</label>
+                <input
+                  type="number"
+                  value={filters.tuitionRange.max}
+                  onChange={(e) => handleTuitionRangeChange('max', Number(e.target.value))}
+                  min={tuitionRange.min}
+                  max={tuitionRange.max}
+                  className="tuition-input"
+                />
+                <span className="tuition-currency">₽</span>
+              </div>
+            </div>
+            <div className="tuition-range-labels">
+              <span>{formatPrice(tuitionRange.min)} ₽</span>
+              <span>{formatPrice(tuitionRange.max)} ₽</span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Фильтр по типу */}
       <div className='dropdown-filters'>
         <div className="dropdown-filter-section">
@@ -371,7 +553,10 @@ export function FilterPanel({
       {/* Сброс фильтров */}
       {(filters.search || 
         filters.selectedTypes.length > 0 || 
-        filters.selectedCategories.length > 0) && (
+        filters.selectedCategories.length > 0 ||
+        filters.selectedCity !== '' ||
+        filters.tuitionRange.min !== tuitionRange.min ||
+        filters.tuitionRange.max !== tuitionRange.max) && (
         <div className="filter-actions">
           <button 
             onClick={handleReset}
@@ -387,6 +572,8 @@ export function FilterPanel({
               Выбрано: 
               {filters.selectedTypes.length > 0 && ` типов: ${filters.selectedTypes.length}`}
               {filters.selectedCategories.length > 0 && ` категорий: ${filters.selectedCategories.length}`}
+              {filters.selectedCity && ` город: ${filters.selectedCity}`}
+              {(filters.tuitionRange.min !== tuitionRange.min || filters.tuitionRange.max !== tuitionRange.max) && ` стоимость`}
               {filters.search && ` поиск: "${filters.search}"`}
             </small>
           </div>

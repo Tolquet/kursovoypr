@@ -2,6 +2,11 @@ export interface FilterState {
   search: string;
   selectedTypes: string[];
   selectedCategories: string[];
+  selectedCity: string;
+  tuitionRange: {
+    min: number;
+    max: number;
+  };
 }
 
 export interface FilterOptions {
@@ -19,6 +24,9 @@ export interface FilterPanelProps {
   data: Array<{
     types: string;
     categoryIns: string[];
+    city?: string;
+    minTuition?: number;
+    maxTuition?: number;
   }>;
   onFilterChange: (filters: FilterState) => void;
   initialFilters?: Partial<FilterState>;

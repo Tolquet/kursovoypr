@@ -9,6 +9,9 @@ export interface Institutes {
   location: string;
   rating: number;
   tuition: string;
+  city?: string;
+  minTuition?: number;
+  maxTuition?: number;
 }
 
 export interface InstitutesList {
