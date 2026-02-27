@@ -36,11 +36,14 @@
    - разграничение прав доступа;
    - защита от распространённых атак (CSRF, XSS).
 
-3. **Реализация поиска и фильтрации учебных заведений:**
-   - разработка универсальной системы фильтрации;
-   - интеграция с базой данных через Prisma ORM;
-   - оптимизация запросов с использованием кэширования (SWR);
-   - синхронизация состояния фильтров с URL-параметрами.
+3. **Реализация загрузки файлов на сервер:**
+   - настройка хранения файлов (MEDIA_ROOT);
+   - создание модели для хранения файлов;
+   - формы и валидация загружаемых файлов:
+     - извлечение метаданных;
+     - проверка MIME-типов;
+     - ограничение размера;
+     - обработка ошибок.
 
 4. **Взаимодействие с базой данных:**
    - проектирование моделей Prisma ORM;
@@ -715,268 +718,294 @@ export async function POST(request: NextRequest) {
 
 ---
 
-## 3. Реализация поиска и фильтрации учебных заведений
+## 3. Реализация загрузки файлов на сервер
 
-### 3.1. Настройка фильтрации
+### 3.1. Настройка хранения файлов (MEDIA_ROOT)
 
-#### Типы учебных заведений
+В проекте используется Next.js с интеграцией файловой системы для хранения загруженных материалов. Настройка включает:
 
-| Тип | Описание | Идентификатор |
-|-----|----------|---------------|
-| Университет | Высшее учебное заведение | `university` |
-| Колледж | Среднее профессиональное образование | `college` |
-| Школа | Общее образование | `school` |
-| Институт | Специализированное учебное заведение | `institute` |
-| Академия | Академическое учебное заведение | `academy` |
-
-#### Категории фильтрации
-
-Система поддерживает 24 категории для детальной фильтрации:
-
-- `технический` — технические направления
-- `гуманитарный` — гуманитарные науки
-- `экономический` — экономические специальности
-- `математический` — математика и физика
-- `творческий` — творческие специальности
-- `it-специальности` — IT и компьютерные науки
-- `инженерный` — инженерные специальности
-- `финансы` — финансы и банковское дело
-- `бизнес` — бизнес и предпринимательство
-- `психология` — психология
-- `социальный` — социальные науки
-- `научный` — научная деятельность
-- `практико-ориентированный` — практико-ориентированное обучение
-- `искусство` — искусство и культура
-- `балет` — балет и хореография
-- `элитный` — элитные программы
-- `олимпиадный` — олимпиадная подготовка
-- `ядерная-физика` — ядерная физика
-- `управленческий` — управление
-- `менеджмент` — менеджмент
-- `администрирование` — администрирование
-- `торговля` — торговля и логистика
-- `государственный` — государственные учреждения
-- `частный` — частные учреждения
-- `исследовательский` — исследовательские программы
-
-### 3.2. Хуки фильтрации
-
-#### useUniversalFilter Hook
+- Определение директории для хранения файлов в переменных окружения
+- Настройку статической раздачи файлов через Next.js
+- Конфигурацию путей для доступа к загруженным материалам
 
 ```typescript
-// src/hooks/useUniversalFilter.tsx
-'use client';
+// Конфигурация путей хранения
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './public/uploads';
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '10485760'); // 10MB по умолчанию
+```
 
-import { useMemo, useState, useCallback } from 'react';
+#### Разрешённые MIME-типы
 
-interface FilterState {
-  search: string;
-  types: string[];
-  categories: string[];
+| Категория | MIME-типы |
+|-----------|-----------|
+| Изображения | `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/svg+xml` |
+| Документы | `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document` |
+| Видео | `video/mp4`, `video/webm`, `video/quicktime` |
+| Аудио | `audio/mpeg`, `audio/wav`, `audio/ogg` |
+
+### 3.2. Создание модели для хранения файлов
+
+#### Схема Prisma для файлов
+
+```prisma
+// prisma/schema.prisma
+
+model UploadedFile {
+  id          Int      @id @default(autoincrement())
+  filename    String   @db.VarChar(255)
+  originalName String  @db.VarChar(255)
+  mimeType    String   @db.VarChar(100)
+  size        Int      // размер в байтах
+  path        String   @db.VarChar(500) // путь к файлу
+  entityType  String?  @db.VarChar(50)  // тип сущности (institute, user, etc.)
+  entityId    Int?     // ID связанной сущности
+  uploadedBy  Int?     @db.VarChar(100) // ID пользователя, загрузившего файл
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([uploadedBy])
+}
+```
+
+### 3.3. Формы и валидация загружаемых файлов
+
+#### Извлечение метаданных
+
+При загрузке файла автоматически извлекаются метаданные:
+
+```typescript
+// src/lib/upload/metadata.ts
+import { File } from 'buffer';
+
+interface FileMetadata {
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  extension: string;
 }
 
-export function useUniversalFilter(initialFilters: FilterState) {
-  const [filters, setFilters] = useState<FilterState>(initialFilters);
-
-  const updateSearch = useCallback((search: string) => {
-    setFilters((prev) => ({ ...prev, search }));
-  }, []);
-
-  const updateTypes = useCallback((types: string[]) => {
-    setFilters((prev) => ({ ...prev, types }));
-  }, []);
-
-  const updateCategories = useCallback((categories: string[]) => {
-    setFilters((prev) => ({ ...prev, categories }));
-  }, []);
-
-  const resetFilters = useCallback(() => {
-    setFilters(initialFilters);
-  }, [initialFilters]);
-
-  const filteredData = useMemo(() => {
-    return (data: Institute[]): Institute[] => {
-      return data.filter((item) => {
-        // Фильтрация по поисковому запросу
-        if (filters.search) {
-          const searchLower = filters.search.toLowerCase();
-          const matchesSearch =
-            item.name.toLowerCase().includes(searchLower) ||
-            item.description.toLowerCase().includes(searchLower) ||
-            item.location.toLowerCase().includes(searchLower);
-          if (!matchesSearch) return false;
-        }
-
-        // Фильтрация по типам
-        if (filters.types.length > 0) {
-          if (!filters.types.includes(item.types)) return false;
-        }
-
-        // Фильтрация по категориям
-        if (filters.categories.length > 0) {
-          const hasCategory = filters.categories.some((cat) =>
-            item.categoryIns.includes(cat)
-          );
-          if (!hasCategory) return false;
-        }
-
-        return true;
-      });
-    };
-  }, [filters]);
-
+export function extractMetadata(file: File): FileMetadata {
+  const extension = file.name.split('.').pop()?.toLowerCase() || '';
+  
   return {
-    filters,
-    updateSearch,
-    updateTypes,
-    updateCategories,
-    resetFilters,
-    filteredData,
+    filename: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${extension}`,
+    originalName: file.name,
+    mimeType: file.type,
+    size: file.size,
+    extension,
   };
 }
 ```
 
-### 3.3. Интеграция с базой данных
-
-#### API эндпоинт для получения заведений
+#### Проверка MIME-типов
 
 ```typescript
-// src/app/api/institutes/route.ts
+// src/lib/upload/validation.ts
+const ALLOWED_MIME_TYPES = new Set([
+  // Изображения
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  // Документы
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
+export function validateMimeType(mimeType: string): boolean {
+  return ALLOWED_MIME_TYPES.has(mimeType);
+}
+
+export function getMimeTypeError(mimeType: string): string {
+  if (!mimeType) {
+    return 'Файл не загружен';
+  }
+  if (!validateMimeType(mimeType)) {
+    return `Недопустимый тип файла. Разрешены: ${[...ALLOWED_MIME_TYPES].join(', ')}`;
+  }
+  return '';
+}
+```
+
+#### Ограничение размера
+
+```typescript
+// src/lib/upload/validation.ts
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB для изображений
+
+export function validateFileSize(size: number, isImage: boolean = false): boolean {
+  const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
+  return size <= maxSize;
+}
+
+export function getFileSizeError(size: number, isImage: boolean = false): string {
+  const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
+  const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
+  
+  if (size > maxSize) {
+    return `Размер файла превышает максимально допустимый (${maxSizeMB}MB)`;
+  }
+  return '';
+}
+```
+
+#### Обработка ошибок
+
+```typescript
+// src/app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { extractMetadata } from '@/lib/upload/metadata';
+import { validateMimeType, validateFileSize } from '@/lib/upload/validation';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type');
-    const category = searchParams.get('category');
-    const search = searchParams.get('search');
+    const formData = await request.formData();
+    const file = formData.get('file') as File | null;
 
-    const where: any = {};
-
-    // Фильтрация по типу
-    if (type) {
-      where.types = type;
+    // Проверка наличия файла
+    if (!file) {
+      return NextResponse.json(
+        { error: 'Файл не загружен' },
+        { status: 400 }
+      );
     }
 
-    // Фильтрация по категории
-    if (category) {
-      where.categoryIns = {
-        has: category,
-      };
+    // Извлечение метаданных
+    const metadata = extractMetadata(file);
+
+    // Валидация MIME-типа
+    const mimeError = validateMimeType(file.type);
+    if (mimeError) {
+      return NextResponse.json(
+        { error: mimeError },
+        { status: 400 }
+      );
     }
 
-    // Поиск по названию, описанию и местоположению
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { location: { contains: search, mode: 'insensitive' } },
-      ];
+    // Валидация размера
+    const isImage = file.type.startsWith('image/');
+    const sizeError = validateFileSize(file.size, isImage);
+    if (sizeError) {
+      return NextResponse.json(
+        { error: sizeError },
+        { status: 400 }
+      );
     }
 
-    const institutes = await prisma.institute.findMany({
-      where,
-      orderBy: {
-        rating: 'desc',
+    // Сохранение файла
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    const uploadDir = join(process.cwd(), 'public', 'uploads');
+    await mkdir(uploadDir, { recursive: true });
+    
+    const filePath = join(uploadDir, metadata.filename);
+    await writeFile(filePath, buffer);
+
+    return NextResponse.json({
+      success: true,
+      file: {
+        filename: metadata.filename,
+        originalName: metadata.originalName,
+        path: `/uploads/${metadata.filename}`,
+        size: metadata.size,
+        mimeType: metadata.mimeType,
       },
-    });
+    }, { status: 201 });
 
-    return NextResponse.json(institutes);
   } catch (error) {
+    console.error('Upload error:', error);
     return NextResponse.json(
-      { error: 'Ошибка при получении данных' },
+      { error: 'Ошибка при загрузке файла' },
       { status: 500 }
     );
   }
 }
 ```
 
-### 3.4. Умный подсчёт результатов
+### 3.4. Клиентский компонент загрузки
 
 ```typescript
-// src/widgets/institution-filter/ui/filter.tsx
-const getFilteredCount = useCallback((type: string): number => {
-  if (!institutes) return 0;
-  
-  return institutes.filter((inst) => {
-    // Проверяем, соответствует ли тип
-    const matchesType = type === 'all' || inst.types === type;
-    if (!matchesType) return false;
-    
-    // Проверяем категорию если она выбрана
-    if (selectedCategory && selectedCategory !== 'all') {
-      const matchesCategory = inst.categoryIns.includes(selectedCategory);
-      if (!matchesCategory) return false;
-    }
-    
-    // Проверяем поисковый запрос
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch = 
-        inst.name.toLowerCase().includes(query) ||
-        inst.description.toLowerCase().includes(query) ||
-        inst.location.toLowerCase().includes(query);
-      if (!matchesSearch) return false;
-    }
-    
-    return true;
-  }).length;
-}, [institutes, selectedCategory, searchQuery]);
-```
-
-### 3.5. Синхронизация с URL-параметрами
-
-```typescript
-// src/app/finder/page.tsx
+// src/components/FileUploader.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useCallback } from 'react';
 
-export default function FinderPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const lastUrlRef = useRef<string>('');
-  
-  const [filters, setFilters] = useState({
-    search: searchParams.get('search') || '',
-    type: searchParams.get('type') || 'all',
-    category: searchParams.get('category') || 'all',
-  });
-
-  // Отслеживание изменений URL
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const currentUrl = window.location.search;
-      if (currentUrl !== lastUrlRef.current) {
-        lastUrlRef.current = currentUrl;
-        
-        setFilters({
-          search: searchParams.get('search') || '',
-          type: searchParams.get('type') || 'all',
-          category: searchParams.get('category') || 'all',
-        });
-      }
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [searchParams]);
-
-  // Обновление URL при изменении фильтров
-  const updateFilters = (newFilters: Partial<typeof filters>) => {
-    const updated = { ...filters, ...newFilters };
-    setFilters(updated);
-    
-    const params = new URLSearchParams();
-    if (updated.search) params.set('search', updated.search);
-    if (updated.type !== 'all') params.set('type', updated.type);
-    if (updated.category !== 'all') params.set('category', updated.category);
-    
-    router.push(`/finder?${params.toString()}`);
+interface UploadResponse {
+  success: boolean;
+  file?: {
+    filename: string;
+    originalName: string;
+    path: string;
+    size: number;
+    mimeType: string;
   };
+  error?: string;
+}
 
-  // ... остальной код
+export function FileUploader() {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<UploadResponse['file'] | null>(null);
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError('');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data: UploadResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка загрузки');
+      }
+
+      setUploadedFile(data.file!);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
+  return (
+    <div className="file-uploader">
+      <input
+        type="file"
+        accept="image/*,.pdf,.doc,.docx"
+        onChange={handleFileChange}
+        disabled={uploading}
+      />
+      
+      {uploading && <p>Загрузка...</p>}
+      
+      {error && <p className="error">{error}</p>}
+      
+      {uploadedFile && (
+        <div className="uploaded-file">
+          <p>Файл загружен: {uploadedFile.originalName}</p>
+          <img src={uploadedFile.path} alt={uploadedFile.originalName} />
+        </div>
+      )}
+    </div>
+  );
 }
 ```
 

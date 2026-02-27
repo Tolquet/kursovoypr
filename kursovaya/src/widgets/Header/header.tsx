@@ -72,11 +72,11 @@ export default function Header() {
       <div className={styles.help}>
         <p>Need help choosing? Contact our educational consultants!</p>
         <div>
-          <Image src="/" alt="" width={30} height={30}/>
+          
           <a href="tel:+18001234567">+7 (800) 123-4567</a>
         </div>
         <div>
-          <Image src="/" alt="" width={30} height={30}/>
+          
           <a href="mailto:support@globaledu.com">support@globaledu.com</a>
         </div>
         <button className={styles.live_chat_button}>Live Chat</button>

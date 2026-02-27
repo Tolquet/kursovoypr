@@ -41,10 +41,15 @@ export default function FinderPage() {
   // Инициализируем фильтры после получения данных
   const {
     filters,
-    setFilters,
+    setFilters: updateFilters,
     filteredData,
     resetFilters
   } = useUniversalFilter(institutes);
+
+  // Мемоизированный обработчик фильтров
+  const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
+    updateFilters(newFilters);
+  }, [updateFilters]);
 
   // Функция для получения фильтров из URL
   const getFiltersFromUrl = useCallback((): Partial<FilterState> => {
@@ -86,13 +91,11 @@ export default function FinderPage() {
     const checkUrlParams = () => {
       const currentParams = window.location.search;
       if (currentParams !== urlParams) {
-        console.log('Обнаружено изменение URL параметров:', currentParams);
         setUrlParams(currentParams);
         
         if (hasData && isInitializedRef.current) {
           const urlFilters = getFiltersFromUrl();
-          console.log('Обновление фильтров из URL:', urlFilters);
-          setFilters(urlFilters);
+          updateFilters(urlFilters);
           lastUrlRef.current = window.location.href;
         }
       }
@@ -107,18 +110,17 @@ export default function FinderPage() {
     return () => {
       clearInterval(urlCheckInterval);
     };
-  }, [urlParams, hasData, getFiltersFromUrl, setFilters]);
+  }, [urlParams, hasData, getFiltersFromUrl, updateFilters]);
 
   // Инициализация при первом рендере
   useEffect(() => {
     if (hasData && !isInitializedRef.current && typeof window !== 'undefined') {
       const urlFilters = getFiltersFromUrl();
-      console.log('Первая инициализация фильтров:', urlFilters);
-      setFilters(urlFilters);
+      updateFilters(urlFilters);
       isInitializedRef.current = true;
       lastUrlRef.current = window.location.href;
     }
-  }, [hasData, getFiltersFromUrl, setFilters]);
+  }, [hasData, getFiltersFromUrl, updateFilters]);
 
   // Состояние загрузки
   if (isLoading && !hasData) {
@@ -215,25 +217,14 @@ export default function FinderPage() {
               </button>
             </div>
           )}
-
-          {/* Кнопка сброса фильтров */}
-          {(filters.search || filters.selectedTypes.length > 0 || filters.selectedCategories.length > 0 || filters.selectedCity || filters.tuitionRange) && (
-            <button
-              className={styles.clear_filters_btn}
-              onClick={resetFilters}
-            >
-              Сбросить фильтры
-            </button>
-          )}
         </div>
 
         {/* Панель фильтрации */}
         <FilterPanel
           data={institutes}
-          onFilterChange={setFilters}
+          onFilterChange={handleFilterChange}
           initialFilters={filters}
           currentFilters={filters}
-          key={JSON.stringify(filters)} // Принудительный перерендер при изменении фильтров
         />
 
         {/* Результаты поиска */}

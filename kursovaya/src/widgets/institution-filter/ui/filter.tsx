@@ -27,20 +27,16 @@ export function FilterPanel({
   initialFilters,
   currentFilters
 }: FilterPanelProps) {
-  // Состояние фильтров с учетом initialFilters через useMemo
-  const initialFilterState = useMemo((): FilterState => ({
+  // Используем currentFilters из пропсов как основной источник истины
+  const filters: FilterState = currentFilters || {
     search: initialFilters?.search || '',
     selectedTypes: initialFilters?.selectedTypes || [],
     selectedCategories: initialFilters?.selectedCategories || [],
     selectedCity: initialFilters?.selectedCity || '',
     tuitionRange: initialFilters?.tuitionRange || { min: 0, max: 1000000 }
-  }), [initialFilters]);
+  };
 
-  const [filters, setFilters] = useState<FilterState>(initialFilterState);
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
-  const [isTypesOpen, setIsTypesOpen] = useState(true); // Типы открыты по умолчанию
-  const [isCityOpen, setIsCityOpen] = useState(false);
-  const [isTuitionOpen, setIsTuitionOpen] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
 
   // Функция для подсчета количества с учетом текущих фильтров
   const getFilteredCount = useCallback((
@@ -49,14 +45,12 @@ export function FilterPanel({
     currentFilters: FilterState
   ): number => {
     return data.filter(item => {
-      // Проверяем соответствие текущему типу/категории
       if (filterType === 'type') {
         if (item.types !== itemType) return false;
       } else {
         if (!item.categoryIns.includes(itemType)) return false;
       }
 
-      // Применяем текущие фильтры поиска
       if (currentFilters.search) {
         const searchLower = currentFilters.search.toLowerCase();
         const matchesSearch = 
@@ -66,26 +60,21 @@ export function FilterPanel({
         if (!matchesSearch) return false;
       }
 
-      // Применяем текущие фильтры по типам (не включая текущий тип)
       if (currentFilters.selectedTypes.length > 0) {
         if (filterType === 'type') {
-          // Если мы считаем для типа, проверяем другие выбранные типы
           const otherSelectedTypes = currentFilters.selectedTypes.filter(t => t !== itemType);
           if (otherSelectedTypes.length > 0 && !otherSelectedTypes.includes(item.types)) {
             return false;
           }
         } else {
-          // Если мы считаем для категории, проверяем все выбранные типы
           if (!currentFilters.selectedTypes.includes(item.types)) {
             return false;
           }
         }
       }
 
-      // Применяем текущие фильтры по категориям (не включая текущую категорию)
       if (currentFilters.selectedCategories.length > 0) {
         if (filterType === 'category') {
-          // Если мы считаем для категории, проверяем другие выбранные категории
           const otherSelectedCategories = currentFilters.selectedCategories.filter(c => c !== itemType);
           if (otherSelectedCategories.length > 0) {
             const hasMatchingCategory = otherSelectedCategories.some(cat =>
@@ -94,7 +83,6 @@ export function FilterPanel({
             if (!hasMatchingCategory) return false;
           }
         } else {
-          // Если мы считаем для типа, проверяем все выбранные категории
           const hasMatchingCategory = currentFilters.selectedCategories.some(cat =>
             item.categoryIns.includes(cat)
           );
@@ -108,42 +96,31 @@ export function FilterPanel({
 
   // Автоматически собираем все уникальные типы и категории из данных
   const filterOptions = useMemo(() => {
-    // Собираем все уникальные типы
     const allTypes = data.map(item => item.types);
     const uniqueTypes = [...new Set(allTypes)];
     
-    // Собираем все уникальные категории
     const allCategories = data.flatMap(item => item.categoryIns);
     const uniqueCategories = [...new Set(allCategories)];
     
-    // Используем текущие фильтры для умного подсчета
     const filtersToUse = currentFilters || filters;
     
-    // Считаем количество для каждого типа с учетом текущих фильтров
     const typeOptions = uniqueTypes.map(type => ({
       id: type,
       label: getTypeLabel(type),
       count: getFilteredCount(type, 'type', filtersToUse)
-    })).sort((a, b) => b.count - a.count); // Сортируем по количеству
+    })).sort((a, b) => b.count - a.count);
     
-    // Считаем количество для каждой категории с учетом текущих фильтров
     const categoryOptions = uniqueCategories.map(category => ({
       id: category,
       label: category,
       count: getFilteredCount(category, 'category', filtersToUse)
-    })).sort((a, b) => b.count - a.count); // Сортируем по количеству
+    })).sort((a, b) => b.count - a.count);
 
     return {
       types: typeOptions,
       categories: categoryOptions
     };
   }, [data, currentFilters, filters, getFilteredCount]);
-
-  // Доступные категории (с количеством > 0)
-  const availableCategories = useMemo(() => 
-    filterOptions.categories.filter(option => option.count > 0),
-    [filterOptions.categories]
-  );
 
   // Уникальные города
   const cities = useMemo(() => {
@@ -168,11 +145,9 @@ export function FilterPanel({
   // Обработчик изменения фильтров
   const updateFilters = (newFilters: Partial<FilterState>) => {
     const updated = { ...filters, ...newFilters };
-    setFilters(updated);
     onFilterChange(updated);
   };
 
-  // Обработчики событий
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateFilters({ search: e.target.value });
   };
@@ -201,25 +176,20 @@ export function FilterPanel({
       selectedCity: '',
       tuitionRange: { min: tuitionRange.min, max: tuitionRange.max }
     };
-    setFilters(resetFilters);
     onFilterChange(resetFilters);
   };
 
-  // Обработчик изменения города
   const handleCityChange = (city: string) => {
     updateFilters({ selectedCity: city });
   };
 
-  // Обработчик изменения диапазона цен
   const handleTuitionRangeChange = (type: 'min' | 'max', value: number) => {
     const currentRange = filters.tuitionRange;
     const newRange = { ...currentRange, [type]: value };
     
-    // Минимум не может быть больше максимума
     if (type === 'min' && value > currentRange.max) {
       newRange.max = value;
     }
-    // Максимум не может быть меньше минимума
     if (type === 'max' && value < currentRange.min) {
       newRange.min = value;
     }
@@ -227,356 +197,276 @@ export function FilterPanel({
     updateFilters({ tuitionRange: newRange });
   };
 
-  const handleSelectAllCategories = () => {
-    const allCategoryIds = availableCategories.map(c => c.id);
-    const allSelected = allCategoryIds.every(id => 
-      filters.selectedCategories.includes(id)
-    );
-  
-    const newCategories = allSelected
-      ? filters.selectedCategories.filter(id => !allCategoryIds.includes(id))
-      : [...filters.selectedCategories, ...allCategoryIds.filter(id => 
-          !filters.selectedCategories.includes(id)
-        )];
-    
-    updateFilters({ selectedCategories: [...new Set(newCategories)] });
-  };
-
   const handleSelectAllTypes = () => {
     const allTypeIds = filterOptions.types.map(t => t.id);
-    const allSelected = allTypeIds.every(id => 
-      filters.selectedTypes.includes(id)
-    );
+    const allSelected = allTypeIds.every(id => filters.selectedTypes.includes(id));
     
     const newTypes = allSelected
       ? filters.selectedTypes.filter(id => !allTypeIds.includes(id))
-      : [...filters.selectedTypes, ...allTypeIds.filter(id => 
-          !filters.selectedTypes.includes(id)
-        )];
+      : [...filters.selectedTypes, ...allTypeIds.filter(id => !filters.selectedTypes.includes(id))];
     
     updateFilters({ selectedTypes: [...new Set(newTypes)] });
   };
 
-  const getCategoriesDropdownTitle = () => {
-    if (filters.selectedCategories.length === 0) {
-      return 'Категории';
-    }
+  const handleSelectAllCategories = () => {
+    const allCategoryIds = filterOptions.categories.map(c => c.id);
+    const allSelected = allCategoryIds.every(id => filters.selectedCategories.includes(id));
   
-    const selectedLabels = filterOptions.categories
-      .filter(option => filters.selectedCategories.includes(option.id))
-      .map(option => option.label);
+    const newCategories = allSelected
+      ? filters.selectedCategories.filter(id => !allCategoryIds.includes(id))
+      : [...filters.selectedCategories, ...allCategoryIds.filter(id => !filters.selectedCategories.includes(id))];
     
-    if (selectedLabels.length <= 2) {
-      return `Категории: ${selectedLabels.join(', ')}`;
-    }
-    
-    return `Категории (${selectedLabels.length} выбрано)`;
+    updateFilters({ selectedCategories: [...new Set(newCategories)] });
   };
 
-  const getTypesDropdownTitle = () => {
-    if (filters.selectedTypes.length === 0) {
-      return 'Типы учебных заведений';
-    }
-    
-    const selectedLabels = filterOptions.types
-      .filter(option => filters.selectedTypes.includes(option.id))
-      .map(option => option.label);
-    
-    if (selectedLabels.length <= 2) {
-      return `Типы: ${selectedLabels.join(', ')}`;
-    }
-    
-    return `Типы (${selectedLabels.length} выбрано)`;
+  const toggleDropdown = (dropdown: string) => {
+    setOpenDropdowns(prev => 
+      prev.includes(dropdown) 
+        ? prev.filter(d => d !== dropdown)
+        : [...prev, dropdown]
+    );
   };
 
+  const hasActiveFilters = filters.search || 
+    filters.selectedTypes.length > 0 || 
+    filters.selectedCategories.length > 0 ||
+    filters.selectedCity !== '' ||
+    filters.tuitionRange.min !== tuitionRange.min ||
+    filters.tuitionRange.max !== tuitionRange.max;
   
-  const areAllCategoriesSelected = availableCategories.length > 0 && 
-    availableCategories.every(cat => filters.selectedCategories.includes(cat.id));
-
-  const getCityDropdownTitle = () => {
-    if (!filters.selectedCity) {
-      return 'Город';
+  // Получить метки для активных тегов
+  const getActiveTags = () => {
+    const tags: { type: string; label: string }[] = [];
+    
+    if (filters.selectedTypes.length > 0) {
+      filters.selectedTypes.forEach(type => {
+        const option = filterOptions.types.find(t => t.id === type);
+        if (option) tags.push({ type: 'type', label: option.label });
+      });
     }
-    return `Город: ${filters.selectedCity}`;
+    
+    if (filters.selectedCategories.length > 0) {
+      filters.selectedCategories.slice(0, 3).forEach(cat => {
+        tags.push({ type: 'category', label: cat });
+      });
+      if (filters.selectedCategories.length > 3) {
+        tags.push({ type: 'category', label: `+${filters.selectedCategories.length - 3}` });
+      }
+    }
+    
+    if (filters.selectedCity) {
+      tags.push({ type: 'city', label: filters.selectedCity });
+    }
+    
+    return tags;
   };
 
-  const getTuitionDropdownTitle = () => {
-    const { min, max } = filters.tuitionRange;
-    const defaultRange = tuitionRange;
-    const isDefault = min === defaultRange.min && max === defaultRange.max;
-    
-    if (isDefault) {
-      return 'Стоимость обучения';
+  const removeTag = (type: string, value: string) => {
+    if (type === 'type') {
+      updateFilters({ selectedTypes: filters.selectedTypes.filter(t => t !== value) });
+    } else if (type === 'category') {
+      updateFilters({ selectedCategories: filters.selectedCategories.filter(c => c !== value) });
+    } else if (type === 'city') {
+      updateFilters({ selectedCity: '' });
     }
-    return `Стоимость: ${formatPrice(min)} - ${formatPrice(max)} ₽`;
   };
 
   return (
     <div className="filter-panel">
-      {/* Поиск */}
+      {/* Search */}
       <div className="filter-section">
-        <div className="filter-header">
-          <h3>Поиск</h3>
-        </div>
         <input
           type="text"
-          placeholder="Поиск по названию или описанию..."
+          placeholder="🔍 Поиск по названию..."
           value={filters.search}
           onChange={handleSearchChange}
           className="search-input"
         />
       </div>
 
-      {/* Фильтр по городу */}
-      {cities.length > 0 && (
-        <div className="dropdown-filter-section">
-          <button
-            className="dropdown-header"
-            onClick={() => setIsCityOpen(!isCityOpen)}
-            aria-expanded={isCityOpen}
+      {/* Filter buttons row */}
+      <div className="filter-row">
+        <button
+          className={`filter-btn ${filters.selectedTypes.length > 0 ? 'active' : ''} ${openDropdowns.includes('types') ? 'opened' : ''}`}
+          onClick={() => toggleDropdown('types')}
+        >
+          <span className="filter-icon">🎓</span>
+          <span>Типы</span>
+          {filters.selectedTypes.length > 0 && (
+            <span className="filter-count">{filters.selectedTypes.length}</span>
+          )}
+        </button>
+
+        <button 
+          className={`filter-btn ${filters.selectedCategories.length > 0 ? 'active' : ''} ${openDropdowns.includes('categories') ? 'opened' : ''}`}
+          onClick={() => toggleDropdown('categories')}
+        >
+          <span className="filter-icon">📚</span>
+          <span>Категории</span>
+          {filters.selectedCategories.length > 0 && (
+            <span className="filter-count">{filters.selectedCategories.length}</span>
+          )}
+        </button>
+
+        {cities.length > 0 && (
+          <button 
+            className={`filter-btn ${filters.selectedCity ? 'active' : ''} ${openDropdowns.includes('city') ? 'opened' : ''}`}
+            onClick={() => toggleDropdown('city')}
           >
-            <div className="header-content">
-              <h3>{getCityDropdownTitle()}</h3>
-              <span className="dropdown-icon">
-                {isCityOpen ? '▲' : '▼'}
-              </span>
-            </div>
-            {filters.selectedCity && (
-              <span className="selected-badge">1</span>
-            )}
+            <span className="filter-icon">🏙️</span>
+            <span>Город</span>
           </button>
-          {isCityOpen && (
-            <div className="dropdown-content">
-              <div className="options-list">
-                <div 
-                  className={`filter-option ${!filters.selectedCity ? 'selected' : ''}`}
-                  onClick={() => handleCityChange('')}
-                >
-                  <input
-                    type="radio"
-                    id="city-all"
-                    name="city"
-                    checked={!filters.selectedCity}
-                    onChange={() => handleCityChange('')}
-                  />
-                  <label htmlFor="city-all">
-                    <span className="option-label">Все города</span>
-                  </label>
-                </div>
-                {cities.map(city => (
-                  <div 
-                    key={city} 
-                    className={`filter-option ${filters.selectedCity === city ? 'selected' : ''}`}
-                    onClick={() => handleCityChange(city)}
+        )}
+          
+        <button 
+          className={`filter-btn ${
+            filters.tuitionRange.min !== tuitionRange.min || 
+            filters.tuitionRange.max !== tuitionRange.max ? 'active' : ''
+          } ${openDropdowns.includes('price') ? 'opened' : ''}`}
+          onClick={() => toggleDropdown('price')}
+        >
+          <span className="filter-icon">💰</span>
+          <span>Цена</span>
+        </button>
+      </div>
+
+      {/* Dropdown panels */}
+      {openDropdowns.length > 0 && (
+        <div className="dropdown-panels" onClick={(e) => e.stopPropagation()}>
+          {/* Types panel */}
+          {openDropdowns.includes('types') && (
+            <div className="dropdown-panel">
+              <div className="panel-title">
+                <span>Типы заведений</span>
+                <span className="select-all-link" onClick={handleSelectAllTypes}>
+                  {filters.selectedTypes.length === filterOptions.types.length ? 'Снять все' : 'Выбрать все'}
+                </span>
+              </div>
+              <div className="options-grid">
+                {filterOptions.types.map(option => (
+                  <label 
+                    key={option.id} 
+                    className={`filter-chip ${option.count === 0 ? 'disabled' : ''} ${
+                      filters.selectedTypes.includes(option.id) ? 'selected' : ''
+                    }`}
                   >
                     <input
-                      type="radio"
-                      id={`city-${city}`}
-                      name="city"
-                      checked={filters.selectedCity === city}
-                      onChange={() => handleCityChange(city)}
+                      type="checkbox"
+                      checked={filters.selectedTypes.includes(option.id)}
+                      onChange={() => handleTypeToggle(option.id)}
+                      disabled={option.count === 0}
                     />
-                    <label htmlFor={`city-${city}`}>
-                      <span className="option-label">{city}</span>
-                    </label>
-                  </div>
+                    <span className="chip-label">{option.label}</span>
+                    <span className="chip-count">({option.count})</span>
+                  </label>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Categories panel */}
+          {openDropdowns.includes('categories') && (
+            <div className="dropdown-panel">
+              <div className="panel-title">
+                <span>Категории</span>
+                <span className="select-all-link" onClick={handleSelectAllCategories}>
+                  {filterOptions.categories.every(c => filters.selectedCategories.includes(c.id)) 
+                    ? 'Снять все' : 'Выбрать все'}
+                </span>
+              </div>
+              <div className="options-grid">
+                {filterOptions.categories.map(option => (
+                  <label 
+                    key={option.id} 
+                    className={`filter-chip ${option.count === 0 ? 'disabled' : ''} ${
+                      filters.selectedCategories.includes(option.id) ? 'selected' : ''
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters.selectedCategories.includes(option.id)}
+                      onChange={() => handleCategoryToggle(option.id)}
+                      disabled={option.count === 0}
+                    />
+                    <span className="chip-label">{option.label}</span>
+                    <span className="chip-count">({option.count})</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* City panel */}
+          {openDropdowns.includes('city') && cities.length > 0 && (
+            <div className="dropdown-panel">
+              <div className="panel-title">
+                <span>Выберите город</span>
+              </div>
+              <select 
+                className="city-select"
+                value={filters.selectedCity}
+                onChange={(e) => handleCityChange(e.target.value)}
+              >
+                <option value="">Все города</option>
+                {cities.map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Price panel */}
+          {openDropdowns.includes('price') && (
+            <div className="dropdown-panel">
+              <div className="panel-title">
+                <span>Стоимость обучения (₽)</span>
+              </div>
+              <div className="price-inputs">
+                <div className="price-field">
+                  <label>От</label>
+                  <input
+                    type="number"
+                    value={filters.tuitionRange.min}
+                    onChange={(e) => handleTuitionRangeChange('min', Number(e.target.value))}
+                    min={tuitionRange.min}
+                    max={tuitionRange.max}
+                  />
+                  <span>₽</span>
+                </div>
+                <div className="price-field">
+                  <label>До</label>
+                  <input
+                    type="number"
+                    value={filters.tuitionRange.max}
+                    onChange={(e) => handleTuitionRangeChange('max', Number(e.target.value))}
+                    min={tuitionRange.min}
+                    max={tuitionRange.max}
+                  />
+                  <span>₽</span>
+                </div>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Фильтр по стоимости */}
-      <div className="dropdown-filter-section">
-        <button
-          className="dropdown-header"
-          onClick={() => setIsTuitionOpen(!isTuitionOpen)}
-          aria-expanded={isTuitionOpen}
-        >
-          <div className="header-content">
-            <h3>{getTuitionDropdownTitle()}</h3>
-            <span className="dropdown-icon">
-              {isTuitionOpen ? '▲' : '▼'}
+      {/* Active filters tags */}
+      {hasActiveFilters && (
+        <div className="active-filters">
+          {getActiveTags().map((tag, index) => (
+            <span key={index} className="active-tag">
+              {tag.label}
+              <button 
+                className="tag-remove" 
+                onClick={() => removeTag(tag.type, tag.type === 'category' && tag.label.startsWith('+') ? '' : tag.label)}
+              >
+                ✕
+              </button>
             </span>
-          </div>
-        </button>
-        {isTuitionOpen && (
-          <div className="dropdown-content">
-            <div className="tuition-range">
-              <div className="tuition-input-group">
-                <label>От:</label>
-                <input
-                  type="number"
-                  value={filters.tuitionRange.min}
-                  onChange={(e) => handleTuitionRangeChange('min', Number(e.target.value))}
-                  min={tuitionRange.min}
-                  max={tuitionRange.max}
-                  className="tuition-input"
-                />
-                <span className="tuition-currency">₽</span>
-              </div>
-              <div className="tuition-input-group">
-                <label>До:</label>
-                <input
-                  type="number"
-                  value={filters.tuitionRange.max}
-                  onChange={(e) => handleTuitionRangeChange('max', Number(e.target.value))}
-                  min={tuitionRange.min}
-                  max={tuitionRange.max}
-                  className="tuition-input"
-                />
-                <span className="tuition-currency">₽</span>
-              </div>
-            </div>
-            <div className="tuition-range-labels">
-              <span>{formatPrice(tuitionRange.min)} ₽</span>
-              <span>{formatPrice(tuitionRange.max)} ₽</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Фильтр по типу */}
-      <div className='dropdown-filters'>
-        <div className="dropdown-filter-section">
-          <button
-            className="dropdown-header"
-            onClick={() => setIsTypesOpen(!isTypesOpen)}
-            aria-expanded={isTypesOpen}
-          >
-            <div className="header-content">
-              <h3>{getTypesDropdownTitle()}</h3>
-              <span className="dropdown-icon">
-                {isTypesOpen ? '▲' : '▼'}
-              </span>
-            </div>
-            {filters.selectedTypes.length > 0 && (
-              <span className="selected-badge">
-                {filters.selectedTypes.length}
-              </span>
-            )}
+          ))}
+          <button className="reset-all-btn" onClick={handleReset}>
+            ✕ Сбросить все
           </button>
-          {isTypesOpen && (
-            <div className="dropdown-content">
-              {/* Кнопка "Выбрать все" для типов */}
-              <div className="dropdown-actions">
-                <button
-                  onClick={handleSelectAllTypes}
-                  className="select-all-btn"
-                  type="button"
-                >
-                  {filters.selectedTypes.length === filterOptions.types.length
-                    ? 'Снять все'
-                    : 'Выбрать все'}
-                </button>
-              </div>
-        
-              {/* Список типов */}
-              <div className="options-list">
-                {filterOptions.types.map(option => (
-                  <div key={option.id} className={`filter-option ${option.count === 0 ? 'disabled' : ''}`}>
-                    <input
-                      type="checkbox"
-                      id={`type-${option.id}`}
-                      checked={filters.selectedTypes.includes(option.id)}
-                      onChange={() => handleTypeToggle(option.id)}
-                      disabled={option.count === 0}
-                    />
-                    <label htmlFor={`type-${option.id}`}>
-                      <span className="option-label">{option.label}</span>
-                      <span className="option-count">({option.count})</span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        {/* Фильтр по категориям */}
-        <div className="dropdown-filter-section">
-          <button
-            className="dropdown-header"
-            onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-            aria-expanded={isCategoriesOpen}
-          >
-            <div className="header-content">
-              <h3>{getCategoriesDropdownTitle()}</h3>
-              <span className="dropdown-icon">
-                {isCategoriesOpen ? '▲' : '▼'}
-              </span>
-            </div>
-            {filters.selectedCategories.length > 0 && (
-              <span className="selected-badge">
-                {filters.selectedCategories.length}
-              </span>
-            )}
-          </button>
-          {isCategoriesOpen && (
-            <div className="dropdown-content">
-              {/* Кнопка "Выбрать все" для категорий */}
-              <div className="dropdown-actions">
-                <button
-                  onClick={handleSelectAllCategories}
-                  className="select-all-btn"
-                  type="button"
-                >
-                  {areAllCategoriesSelected
-                    ? 'Снять все'
-                    : 'Выбрать все'}
-                </button>
-              </div>
-        
-              {/* Список категорий */}
-              <div className="options-list">
-                {filterOptions.categories.map(option => (
-                  <div key={option.id} className={`filter-option ${option.count === 0 ? 'disabled' : ''}`}>
-                    <input
-                      type="checkbox"
-                      id={`category-${option.id}`}
-                      checked={filters.selectedCategories.includes(option.id)}
-                      onChange={() => handleCategoryToggle(option.id)}
-                      disabled={option.count === 0}
-                    />
-                    <label htmlFor={`category-${option.id}`}>
-                      <span className="option-label">{option.label}</span>
-                      <span className="option-count">({option.count})</span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Сброс фильтров */}
-      {(filters.search || 
-        filters.selectedTypes.length > 0 || 
-        filters.selectedCategories.length > 0 ||
-        filters.selectedCity !== '' ||
-        filters.tuitionRange.min !== tuitionRange.min ||
-        filters.tuitionRange.max !== tuitionRange.max) && (
-        <div className="filter-actions">
-          <button 
-            onClick={handleReset}
-            className="reset-btn"
-            type="button"
-          >
-            Сбросить все фильтры
-          </button>
-          
-          {/* Информация о выбранных фильтрах */}
-          <div className="selected-filters-info">
-            <small>
-              Выбрано: 
-              {filters.selectedTypes.length > 0 && ` типов: ${filters.selectedTypes.length}`}
-              {filters.selectedCategories.length > 0 && ` категорий: ${filters.selectedCategories.length}`}
-              {filters.selectedCity && ` город: ${filters.selectedCity}`}
-              {(filters.tuitionRange.min !== tuitionRange.min || filters.tuitionRange.max !== tuitionRange.max) && ` стоимость`}
-              {filters.search && ` поиск: "${filters.search}"`}
-            </small>
-          </div>
         </div>
       )}
     </div>
