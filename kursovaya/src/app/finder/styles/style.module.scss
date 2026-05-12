@@ -1,0 +1,288 @@
+// finder_page.scss - Современный дизайн для страницы поиска учебных заведений
+
+.finder_page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: white;
+  padding: 2rem;
+  gap: 2rem;
+
+  // Адаптивная верстка
+  @media (max-width: 1200px) {
+    padding: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+// Основная сетка для карточек
+.inst_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+  padding: 1rem 0;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 1rem;
+  }
+}
+
+// Контейнер для результатов
+.results-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    border-radius: 15px;
+  }
+}
+
+// Заголовок результатов
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+// Активный фильтр по типу
+.active-type-filter {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  animation: slideIn 0.5s ease-out;
+
+  small {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+// Кнопки
+.clear-filters-btn,
+.remove-filter-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    background: linear-gradient(135deg, #ee5a24, #ff6b6b);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.remove-filter-btn {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+// Сообщение "Ничего не найдено"
+.no-results {
+  text-align: center;
+  padding: 4rem 2rem;
+  
+  h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
+  }
+  
+  p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+}
+
+// Статистика фильтрации
+.filter-stats {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 2rem;
+  
+  small {
+    color: #5a6c7d;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+}
+
+// Анимации
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Стили для карточек институтов (если нужно переопределить базовые стили)
+.card_institute {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.6s ease-out;
+
+  &:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover .card-image {
+    transform: scale(1.05);
+  }
+
+  .card-content {
+    padding: 1.5rem;
+  }
+
+  .card-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .card-description {
+    color: #7f8c8d;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+
+  .card-location {
+    color: #3498db;
+    font-weight: 500;
+  }
+
+  .card-rating {
+    font-weight: 600;
+    color: #f39c12;
+  }
+
+  .card-tuition {
+    color: #e74c3c;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .card-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .type-tag {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+}

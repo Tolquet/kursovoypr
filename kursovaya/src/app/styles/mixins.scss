@@ -1,11 +1,28 @@
 @mixin flex-row{
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
     align-items: center;
 }
 @mixin flex-column{
     display: flex;
     flex-direction: column;
     
+}
+
+@mixin tablet {
+    @media (min-width: 768px) {
+        @content;
+    }
+}
+
+@mixin desktop {
+    @media (min-width: 1024px) {
+        @content;
+    }
+}
+
+@mixin largeDesktop {
+    @media (min-width: 1280px) {
+        @content;
+    }
 }
