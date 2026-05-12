@@ -213,6 +213,11 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
     }
   };
 
+  const handleStarClick = (rating: number) => {
+    setNewRating(rating);
+    setError('');
+  };
+
   const renderStars = () => {
     return (
       <div className={styles.stars}>

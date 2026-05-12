@@ -106,7 +106,7 @@ export const authOptions: NextAuthOptions = {
       console.log('[NextAuth] JWT callback, user:', user)
       if (user) {
         token.id = user.id
-        token.userType = (user as UserSession).userType
+        token.userType = (user as UserSession).userType || 'student'
       }
       return token
     },
@@ -114,7 +114,7 @@ export const authOptions: NextAuthOptions = {
       console.log('[NextAuth] Session callback, token:', token)
       if (token && session.user) {
         session.user.id = token.id as string
-        session.user.userType = (token.userType as string) || 'student'
+        session.user.userType = token.userType as string
       }
       return session
     }
