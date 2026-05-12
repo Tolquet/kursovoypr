@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { FilterState } from '@/src/widgets/institution-filter/types/filters';
 import { useUniversalFilter } from '@/src/hooks/useUniversalFilter';
 import { useInstitutes } from '@/src/hooks/useInstitutes';
 import {FilterPanel} from '@/src/widgets/institution-filter/ui/filter';
 import CardList from '@/src/widgets/CardInstitutes/cardList';
+import { ExportMenu } from '@/src/shared/ui/exportMenu/exportMenu';
+import Link from 'next/link';
 import styles from './styles/style.module.scss';
 
 // Вспомогательная функция для преобразования типа в читаемый формат
@@ -21,12 +24,27 @@ const getTypeLabel = (type: string): string => {
 };
 
 export default function FinderPage() {
+  const { data: session, status } = useSession();
+  const [userType, setUserType] = useState<string>('student');
+  
   // Используем useState для отслеживания URL параметров
   const [urlParams, setUrlParams] = useState('');
   
   // Используем useRef для отслеживания инициализации без лишних рендеров
   const isInitializedRef = useRef(false);
   const lastUrlRef = useRef('');
+
+  // Загрузка типа пользователя
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetch('/api/auth/me')
+        .then(res => res.json())
+        .then(data => {
+          setUserType(data.userType || 'student');
+        })
+        .catch(() => setUserType('student'));
+    }
+  }, [status]);
 
   // Получаем данные из API
   const {
@@ -227,9 +245,61 @@ export default function FinderPage() {
           currentFilters={filters}
         />
 
+        {/* Кнопка создания для компаний */}
+        {userType === 'company' && (
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+            <Link href="/institutes/create">
+              <button
+                style={{
+                  background: 'linear-gradient(135deg, #48bb78, #38a169)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '25px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 12px rgba(72, 187, 120, 0.3)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(72, 187, 120, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(72, 187, 120, 0.3)';
+                }}
+              >
+                <span>➕</span>
+                <span>Добавить учебное заведение</span>
+              </button>
+            </Link>
+          </div>
+        )}
+
         {/* Результаты поиска */}
         {filteredData.length > 0 ? (
           <>
+            {/* Меню экспорта */}
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+              <ExportMenu 
+                data={filteredData.map(item => ({
+                  name: item.name,
+                  description: item.description,
+                  types: item.types,
+                  location: item.location,
+                  rating: item.rating,
+                  tuition: item.tuition,
+                  categories: item.categoryIns
+                }))}
+                filename="educational-institutions"
+              />
+            </div>
+
             <CardList list={filteredData} />
 
             {/* Статистика фильтрации */}

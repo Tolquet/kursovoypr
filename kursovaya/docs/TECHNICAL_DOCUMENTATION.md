@@ -1344,58 +1344,466 @@ function validateInstituteInput(data: any): ValidationResult {
 
 ---
 
-## 6. Профориентационное тестирование
+## 6. Экспорт данных
 
-### 6.1. Структура тестов
+### 6.1. Экспорт в Excel
 
-В системе реализовано 6 профориентационных тестов:
-
-| № | Тест | Описание | Количество вопросов |
-|---|------|----------|---------------------|
-| 1 | **MBTI** | Определение типа личности (16 типов) | 60 |
-| 2 | **Тест Холланда** | Профессиональная ориентация (6 типов) | 36 |
-| 3 | **Оценка навыков** | Определение ключевых компетенций | 24 |
-| 4 | **Ценностные ориентации** | Карьерные ценности | 20 |
-| 5 | **Логическое мышление** | Тест на логику | 15 |
-| 6 | **Творческий потенциал** | Оценка креативности | 18 |
-
-### 6.2. Реализация тестирования
+Система поддерживает экспорт данных учебных заведений в формате Excel с полным форматированием:
 
 ```typescript
-// Пример структуры теста MBTI
-interface MBTITest {
-  id: 'mbti';
-  title: 'Тип личности (MBTI)';
-  description: 'Определите ваш тип личности по Майерс-Бриггс';
-  questions: MBTIQuestion[];
-  results: MBTIResult[];
+// src/lib/export/excel.ts
+import * as XLSX from 'xlsx';
+
+interface InstituteExport {
+  name: string;
+  description: string;
+  types: string;
+  location: string;
+  rating: number;
+  tuition: string;
+  categories: string[];
 }
 
-interface MBTIQuestion {
-  id: number;
-  text: string;
-  dimension: 'EI' | 'SN' | 'TF' | 'JP'; // Измерения MBTI
-  options: {
-    value: 'A' | 'B';
-    text: string;
-    points: number;
-  }[];
+export function exportToExcel(data: InstituteExport[], filename: string): void {
+  // Подготовка данных для экспорта
+  const worksheetData = data.map(item => ({
+    'Название': item.name,
+    'Описание': item.description,
+    'Тип': item.types,
+    'Город': item.location,
+    'Рейтинг': item.rating,
+    'Стоимость': item.tuition,
+    'Категории': item.categories.join(', '),
+  }));
+
+  // Создание книги Excel
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+  // Настройка ширины колонок
+  worksheet['!cols'] = [
+    { wch: 30 }, // Название
+    { wch: 50 }, // Описание
+    { wch: 15 }, // Тип
+    { wch: 20 }, // Город
+    { wch: 10 }, // Рейтинг
+    { wch: 15 }, // Стоимость
+    { wch: 40 }, // Категории
+  ];
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Учебные заведения');
+
+  // Скачивание файла
+  XLSX.writeFile(workbook, `${filename}.xlsx`);
 }
 ```
 
-### 6.3. Сохранение результатов
+#### Стилизация ячеек
 
 ```typescript
-// Сохранение результатов теста
-async function saveTestResult(userId: number, testType: string, score: any) {
-  return await prisma.testResult.create({
-    data: {
-      userId,
-      testType,
-      score, // JSON-объект с результатами
-      completedAt: new Date(),
-    },
+// Расширенная версия с кастомными стилями
+export function exportToExcelStyled(data: InstituteExport[], filename: string): void {
+  const workbook = XLSX.utils.book_new();
+  
+  // Создание листа с данными
+  const worksheet = XLSX.utils.json_to_sheet(data.map(item => ({
+    'Название': item.name,
+    'Тип': item.types,
+    'Город': item.location,
+    'Рейтинг': item.rating,
+    'Стоимость': item.tuition,
+  })));
+
+  // Применение стилей к заголовку
+  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+  for (let col = range.s.c; col <= range.e.c; col++) {
+    const cellAddr = XLSX.utils.encode_cell({ r: 0, c: col });
+    if (worksheet[cellAddr]) {
+      worksheet[cellAddr].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '0657F9' } },
+        alignment: { horizontal: 'center' },
+      };
+    }
+  }
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Данные');
+  XLSX.writeFile(workbook, `${filename}.xlsx`);
+}
+```
+
+### 6.2. Экспорт в Word
+
+Экспорт данных в документ Word с форматированием, таблицами и изображениями:
+
+```typescript
+// src/lib/export/word.ts
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } from 'docx';
+
+interface InstituteExport {
+  name: string;
+  description: string;
+  types: string;
+  location: string;
+  rating: number;
+  tuition: string;
+}
+
+export async function exportToWord(data: InstituteExport[], filename: string): Promise<void> {
+  // Создание заголовка документа
+  const title = new Paragraph({
+    children: [
+      new TextRun({
+        text: 'Список учебных заведений',
+        bold: true,
+        size: 32,
+      }),
+    ],
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 400 },
   });
+
+  // Создание таблицы с данными
+  const tableRows = [
+    // Заголовок таблицы
+    new TableRow({
+      children: [
+        createHeaderCell('Название'),
+        createHeaderCell('Тип'),
+        createHeaderCell('Город'),
+        createHeaderCell('Рейтинг'),
+        createHeaderCell('Стоимость'),
+      ],
+    }),
+    // Строки данных
+    ...data.map(item => new TableRow({
+      children: [
+        createDataCell(item.name),
+        createDataCell(item.types),
+        createDataCell(item.location),
+        createDataCell(item.rating.toString()),
+        createDataCell(item.tuition),
+      ],
+    })),
+  ];
+
+  const table = new Table({
+    rows: tableRows,
+    width: { size: 100, type: WidthType.PERCENTAGE },
+  });
+
+  // Создание документа
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: [title, table],
+    }],
+  });
+
+  // Сохранение документа
+  const buffer = await Packer.toBuffer(doc);
+  downloadFile(buffer, `${filename}.docx`);
+}
+
+function createHeaderCell(text: string): TableCell {
+  return new TableCell({
+    children: [new Paragraph({
+      children: [new TextRun({ text, bold: true })],
+      alignment: AlignmentType.CENTER,
+    })],
+    shading: { fill: '0657F9' },
+  });
+}
+
+function createDataCell(text: string): TableCell {
+  return new TableCell({
+    children: [new Paragraph(text)],
+  });
+}
+
+function downloadFile(buffer: Buffer, filename: string): void {
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+```
+
+### 6.3. Экспорт в PDF
+
+```typescript
+// src/lib/export/pdf.ts
+import jsPDF from 'jspdf';
+
+interface InstituteExport {
+  name: string;
+  description: string;
+  types: string;
+  location: string;
+  rating: number;
+  tuition: string;
+}
+
+export function exportToPDF(data: InstituteExport[], filename: string): void {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Заголовок
+  doc.setFontSize(20);
+  doc.setTextColor(6, 87, 249); // Основной цвет
+  doc.text('Список учебных заведений', pageWidth / 2, 20, { align: 'center' });
+
+  // Дата генерации
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Дата: ${new Date().toLocaleDateString('ru-RU')}`, pageWidth / 2, 28, { align: 'center' });
+
+  let yPosition = 40;
+
+  // Таблица заголовков
+  doc.setFillColor(6, 87, 249);
+  doc.rect(10, yPosition, pageWidth - 20, 8, 'F');
+  doc.setTextColor(255);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  
+  const headers = ['Название', 'Тип', 'Город', 'Рейтинг', 'Стоимость'];
+  const colWidths = [50, 25, 30, 20, 25];
+  let xPosition = 12;
+  
+  headers.forEach((header, i) => {
+    doc.text(header, xPosition, yPosition + 5.5);
+    xPosition += colWidths[i];
+  });
+
+  yPosition += 12;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0);
+
+  // Данные
+  data.forEach((item, index) => {
+    // Чередование строк
+    if (index % 2 === 0) {
+      doc.setFillColor(245, 247, 250);
+      doc.rect(10, yPosition - 4, pageWidth - 20, 8, 'F');
+    }
+
+    doc.setFontSize(8);
+    xPosition = 12;
+    
+    const rowData = [
+      item.name.substring(0, 25) + (item.name.length > 25 ? '...' : ''),
+      item.types,
+      item.location,
+      item.rating.toFixed(1),
+      item.tuition,
+    ];
+
+    rowData.forEach((cell, i) => {
+      doc.text(cell, xPosition, yPosition);
+      xPosition += colWidths[i];
+    });
+
+    yPosition += 8;
+
+    // Новая страница при необходимости
+    if (yPosition > 270) {
+      doc.addPage();
+      yPosition = 20;
+    }
+  });
+
+  // Нумерация страниц
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`Страница ${i} из ${pageCount}`, pageWidth / 2, 290, { align: 'center' });
+  }
+
+  doc.save(`${filename}.pdf`);
+}
+```
+
+### 6.4. Интерфейс для выбора формата экспорта
+
+```typescript
+// src/components/ExportMenu.tsx
+'use client';
+
+import { useState } from 'react';
+
+interface ExportMenuProps {
+  data: InstituteExport[];
+  filename: string;
+}
+
+type ExportFormat = 'excel' | 'word' | 'pdf' | 'print';
+
+export function ExportMenu({ data, filename }: ExportMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async (format: ExportFormat) => {
+    setExporting(true);
+    setIsOpen(false);
+
+    try {
+      switch (format) {
+        case 'excel':
+          const { exportToExcel } = await import('@/lib/export/excel');
+          exportToExcel(data, filename);
+          break;
+        case 'word':
+          const { exportToWord } = await import('@/lib/export/word');
+          await exportToWord(data, filename);
+          break;
+        case 'pdf':
+          const { exportToPDF } = await import('@/lib/export/pdf');
+          exportToPDF(data, filename);
+          break;
+        case 'print':
+          window.print();
+          break;
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="export-menu">
+      <button 
+        className="export-button"
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={exporting}
+      >
+        {exporting ? 'Экспорт...' : '📥 Экспорт'}
+      </button>
+
+      {isOpen && (
+        <div className="export-dropdown">
+          <button onClick={() => handleExport('excel')}>
+            📊 Excel (.xlsx)
+          </button>
+          <button onClick={() => handleExport('word')}>
+            📄 Word (.docx)
+          </button>
+          <button onClick={() => handleExport('pdf')}>
+            📕 PDF
+          </button>
+          <hr />
+          <button onClick={() => handleExport('print')}>
+            🖨️ Печать
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### 6.5. Форматирование вывода страницы на печать (CSS Media Queries)
+
+```scss
+// src/app/styles/print.scss
+
+// Стили для печати
+@media print {
+  // Скрытие элементов навигации
+  header, 
+  footer, 
+  .no-print {
+    display: none !important;
+  }
+
+  // Настройка основного контейнера
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  // Стили для карточек при печати
+  .institute-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #ddd;
+    box-shadow: none;
+    margin-bottom: 10px;
+  }
+
+  // Заголовки
+  h1, h2, h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  // Ссылки
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  // Изображения
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  // Таблицы
+  table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    
+    th, td {
+      border: 1px solid #000 !important;
+    }
+    
+    th {
+      background-color: #f0f0f0 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
+  // Настройка страницы
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  // Цвета для печати
+  body {
+    color: #000 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+// Стили для предпросмотра печати
+@media screen {
+  .print-preview {
+    background: #666;
+    padding: 20px;
+    
+    .print-preview-content {
+      background: white;
+      margin: 0 auto;
+      max-width: 210mm;
+      min-height: 297mm;
+      padding: 20mm;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+  }
 }
 ```
 

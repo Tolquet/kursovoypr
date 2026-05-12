@@ -1,14 +1,15 @@
 // src/app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './styles/login.module.scss';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -16,26 +17,61 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Перенаправляем авторизованных пользователей на профиль
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push('/profile');
+    }
+  }, [status, router]);
+
+  // Показываем загрузку, пока проверяем аутентификацию
+  if (status === 'loading') {
+    return (
+      <div className={styles.login_page}>
+        <div className={styles.login_container}>
+          <div className={styles.login_header}>
+            <p>Загрузка...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Если пользователь уже авторизован, не показываем форму
+  if (status === 'authenticated') {
+    return null;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
+      console.log('[Login] Attempting login with:', formData.email);
+      
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false
       });
 
+      console.log('[Login] Result:', result);
+
       if (result?.error) {
-        setError('Неверный email или пароль');
-      } else {
+        console.error('[Login] Error:', result.error);
+        setError(result.error);
+      } else if (result?.ok) {
+        console.log('[Login] Success, redirecting to profile');
         router.push('/profile');
         router.refresh();
+      } else {
+        console.error('[Login] Unexpected result:', result);
+        setError('Неверный email или пароль');
       }
-    } catch {
-      setError('Произошла ошибка при входе');
+    } catch (err) {
+      console.error('[Login] Exception:', err);
+      setError(err instanceof Error ? err.message : 'Произошла ошибка при входе');
     } finally {
       setLoading(false);
     }

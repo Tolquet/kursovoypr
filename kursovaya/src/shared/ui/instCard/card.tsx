@@ -1,6 +1,11 @@
 import Image from 'next/image'
+import { useCallback } from 'react';
 import { Institutes } from '@/src/widgets/CardInstitutes/types/cardIst'
 import styles from './styles/style.module.scss'
+
+interface InstCardProps extends Institutes {
+  onOpenModal?: (institute: Institutes | null) => void;
+}
 
 // Функция для получения цвета рейтинга
 const getRatingColor = (rating: number): string => {
@@ -40,7 +45,7 @@ const getTypeLabel = (type: string): string => {
   return labels[type] || type;
 };
 
-export default function InstCard(props: Institutes) {
+export default function InstCard(props: InstCardProps) {
     const {
         name,
         description,
@@ -53,6 +58,7 @@ export default function InstCard(props: Institutes) {
         city,
         minTuition,
         maxTuition,
+        onOpenModal,
     } = props
 
     // Формируем строку стоимости
@@ -60,9 +66,17 @@ export default function InstCard(props: Institutes) {
       ? `от ${formatPrice(minTuition)} до ${formatPrice(maxTuition)}`
       : tuition || 'По запросу';
 
+    const handleCardClick = useCallback(() => {
+        onOpenModal?.(props);
+    }, [onOpenModal, props]);
+
     return (
         <li className={styles.card_institute}>
-            <div className={styles.card_image}>
+            <div 
+                className={styles.card_image} 
+                onClick={handleCardClick} 
+                style={{ cursor: 'pointer' }}
+            >
                 {image && (
                     <Image
                         src={image}
@@ -84,7 +98,11 @@ export default function InstCard(props: Institutes) {
                 )}
             </div>
 
-            <div className={styles.cardContent}>
+            <div 
+                className={styles.cardContent} 
+                onClick={handleCardClick}
+                style={{ cursor: 'pointer' }}
+            >
                 <h3 className={styles.cardTitle}>{name}</h3>
                 
                 <div className={styles.cardMeta}>

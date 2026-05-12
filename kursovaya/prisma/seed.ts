@@ -109,7 +109,10 @@ const instituteData = [
 async function main() {
   console.log('🌱 Начинаем заполнение базы данных...')
 
-  // Очищаем существующие данные
+  // Очищаем существующие данные (сначала компании, затем институты)
+  await prisma.company.deleteMany()
+  console.log('✅ Очистили данные компаний')
+
   await prisma.institute.deleteMany()
   console.log('✅ Очистили существующие данные')
 

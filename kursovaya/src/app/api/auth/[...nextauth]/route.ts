@@ -5,8 +5,42 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from '@/src/lib/prisma'
 import bcrypt from 'bcryptjs'
 
+interface UserWithUserType {
+  id: number
+  email: string
+  name: string | null
+  password: string
+  userType: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+interface UserSession {
+  id: string
+  email: string
+  name: string | null
+  userType?: string
+}
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string
+      email: string
+      name: string | null
+      userType: string
+    }
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string
+    userType: string
+  }
+}
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -15,7 +49,10 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
+        console.log('[NextAuth] Attempting login for:', credentials?.email)
+        
         if (!credentials?.email || !credentials?.password) {
+          console.log('[NextAuth] Missing email or password')
           throw new Error('Введите email и пароль')
         }
 
@@ -25,7 +62,10 @@ export const authOptions: NextAuthOptions = {
           }
         })
 
+        console.log('[NextAuth] User found:', user ? 'Yes' : 'No')
+
         if (!user || !user.password) {
+          console.log('[NextAuth] User not found or no password')
           throw new Error('Неверный email или пароль')
         }
 
@@ -34,14 +74,21 @@ export const authOptions: NextAuthOptions = {
           user.password
         )
 
+        console.log('[NextAuth] Password valid:', isPasswordValid)
+
         if (!isPasswordValid) {
+          console.log('[NextAuth] Invalid password')
           throw new Error('Неверный email или пароль')
         }
+
+        const userWithUserType = user as UserWithUserType
+        console.log('[NextAuth] Login successful, userType:', userWithUserType.userType)
 
         return {
           id: user.id.toString(),
           email: user.email,
-          name: user.name
+          name: user.name,
+          userType: userWithUserType.userType
         }
       }
     })
@@ -56,19 +103,24 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      console.log('[NextAuth] JWT callback, user:', user)
       if (user) {
         token.id = user.id
+        token.userType = (user as UserSession).userType
       }
       return token
     },
     async session({ session, token }) {
+      console.log('[NextAuth] Session callback, token:', token)
       if (token && session.user) {
         session.user.id = token.id as string
+        session.user.userType = (token.userType as string) || 'student'
       }
       return session
     }
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'your-secret-key',
+  debug: process.env.NODE_ENV === 'development'
 }
 
 const handler = NextAuth(authOptions)

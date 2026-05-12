@@ -2,8 +2,8 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
 import styles from './styles/profile.module.scss';
 
 // Типы для профориентационных тестов
@@ -16,6 +16,37 @@ interface CareerTest {
   completed: boolean;
   progress: number;
   category: 'personality' | 'skills' | 'interests' | 'aptitude';
+}
+
+// Типы для учебных заведений
+interface Institute {
+  id: number;
+  name: string;
+  description: string;
+  image?: string;
+  banner?: string;
+  website?: string;
+  types: string;
+  location: string;
+  city?: string;
+  rating: number;
+  tuition: string;
+  minTuition?: number;
+  maxTuition?: number;
+  categoryIns: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Типы для данных компании
+interface CompanyData {
+  companyName: string;
+  inn: string;
+  contactPerson: string;
+  position: string;
+  phone: string;
+  department: string;
+  legalAddress: string;
 }
 
 // Примеры профориентационных тестов
@@ -83,9 +114,25 @@ const CAREER_TESTS: CareerTest[] = [
 ];
 
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div>Загрузка...</div>}>
+      <ProfileContent />
+    </Suspense>
+  );
+}
+
+function ProfileContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'tests' | 'results'>('overview');
+  const searchParams = useSearchParams();
+  const viewedUserId = searchParams.get('userId');
+  
+  const [activeTab, setActiveTab] = useState<'overview' | 'tests' | 'results' | 'institutes'>('overview');
+  const [userType, setUserType] = useState<string>('student');
+  const [companyData, setCompanyData] = useState<CompanyData | null>(null);
+  const [userInstitutes, setUserInstitutes] = useState<Institute[]>([]);
+  const [loadingInstitutes, setLoadingInstitutes] = useState(false);
+  const [viewedUserProfile, setViewedUserProfile] = useState<{id: number, name: string, email: string, userType: string} | null>(null);
 
   // Используем тесты для отображения
   const tests = CAREER_TESTS;
@@ -95,6 +142,71 @@ export default function ProfilePage() {
       router.push('/login');
     }
   }, [status, router]);
+
+  // Загрузка данных пользователя и компаний
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch(`/api/auth/me`)
+      if (response.ok) {
+        const data = await response.json()
+        setUserType(data.userType || 'student')
+        
+        if (data.userType === 'company' && data.company) {
+          setCompanyData(data.company)
+          setActiveTab('institutes')
+          fetchUserInstitutes()
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке данных пользователя:', error)
+    }
+  }
+
+  // Загрузка профиля другого пользователя
+  useEffect(() => {
+    if (viewedUserId) {
+      const fetchViewedUser = async () => {
+        try {
+          const response = await fetch(`/api/users/${viewedUserId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setViewedUserProfile(data.user);
+            if (data.user.userType === 'company') {
+              fetchUserInstitutes(viewedUserId);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching viewed user:', error);
+        }
+      };
+      fetchViewedUser();
+    }
+  }, [viewedUserId]);
+
+  useEffect(() => {
+    if (session?.user && !viewedUserId) {
+      fetchUserData()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, viewedUserId])
+
+  const fetchUserInstitutes = async (targetUserId?: string) => {
+    setLoadingInstitutes(true);
+    try {
+      const url = targetUserId 
+        ? `/api/users/${targetUserId}/institutes`
+        : '/api/institutes/my';
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setUserInstitutes(data.institutes || []);
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке учебных заведений:', error);
+    } finally {
+      setLoadingInstitutes(false);
+    }
+  };
 
   if (status === 'loading') {
     return (
@@ -137,23 +249,99 @@ export default function ProfilePage() {
     aptitude: '#e53e3e'
   };
 
+  const userTypeLabels = {
+    student: 'Студент',
+    applicant: 'Абитуриент',
+    school: 'Школьник',
+    company: 'Компания'
+  };
+
+  const isViewingOtherProfile = !!viewedUserId && !!viewedUserProfile;
+
+  const getInstituteTypeLabel = (type: string) => {
+    const types: Record<string, string> = {
+      university: 'Университет',
+      college: 'Колледж',
+      institute: 'Институт',
+      school: 'Школа',
+      academy: 'Академия'
+    };
+    return types[type] || type;
+  };
+
+  const handleDeleteInstitute = async (instituteId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить это учебное заведение?')) return;
+
+    try {
+      const response = await fetch(`/api/institutes/${instituteId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка при удалении');
+      }
+
+      setUserInstitutes(userInstitutes.filter(i => i.id !== instituteId));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Ошибка при удалении');
+    }
+  };
+
+  const getRatingColor = (rating: number) => {
+    if (rating >= 4.5) return '#48bb78';
+    if (rating >= 4.0) return '#38a169';
+    if (rating >= 3.5) return '#ed8936';
+    return '#e53e3e';
+  };
+
   return (
     <div className={styles.profile_page}>
       <div className={styles.profile_container}>
         {/* Шапка профиля */}
         <div className={styles.profile_header}>
           <div className={styles.user_info}>
+            {isViewingOtherProfile ? (
+              <button
+                className={styles.back_button}
+                onClick={() => router.push('/profile')}
+              >
+                ← Назад
+              </button>
+            ) : null}
             <div className={styles.avatar}>
-              {session.user?.name?.charAt(0).toUpperCase() || session.user?.email?.charAt(0).toUpperCase()}
+              {(isViewingOtherProfile ? viewedUserProfile?.name : session.user?.name)?.charAt(0).toUpperCase() || 
+               (isViewingOtherProfile ? viewedUserProfile?.email : session.user?.email)?.charAt(0).toUpperCase()}
             </div>
             <div className={styles.user_details}>
-              <h1>{session.user?.name || 'Пользователь'}</h1>
-              <p>{session.user?.email}</p>
+              <h1>
+                {isViewingOtherProfile 
+                  ? viewedUserProfile?.name || viewedUserProfile?.email?.split('@')[0]
+                  : userType === 'company' && companyData 
+                    ? companyData.companyName 
+                    : session.user?.name || 'Пользователь'}
+              </h1>
+              <div className={styles.user_meta}>
+                <p>{isViewingOtherProfile ? viewedUserProfile?.email : session.user?.email}</p>
+                <span className={styles.user_type_badge}>
+                  {userTypeLabels[(isViewingOtherProfile ? viewedUserProfile?.userType : userType) as keyof typeof userTypeLabels] || 
+                   (isViewingOtherProfile ? viewedUserProfile?.userType : userType)}
+                </span>
+              </div>
+              {userType === 'company' && companyData && (
+                <div className={styles.company_info}>
+                  <span className={styles.company_inn}>ИНН: {companyData.inn}</span>
+                  <span className={styles.company_contact}>{companyData.contactPerson} — {companyData.position}</span>
+                </div>
+              )}
             </div>
           </div>
-          <button onClick={handleLogout} className={styles.logout_button}>
-            Выйти
-          </button>
+          {!isViewingOtherProfile && (
+            <button onClick={handleLogout} className={styles.logout_button}>
+              Выйти
+            </button>
+          )}
         </div>
 
         {/* Навигация по вкладкам */}
@@ -164,18 +352,30 @@ export default function ProfilePage() {
           >
             Обзор
           </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'tests' ? styles.active : ''}`}
-            onClick={() => setActiveTab('tests')}
-          >
-            Тесты
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'results' ? styles.active : ''}`}
-            onClick={() => setActiveTab('results')}
-          >
-            Результаты
-          </button>
+          {userType !== 'company' && (
+            <>
+              <button
+                className={`${styles.tab} ${activeTab === 'tests' ? styles.active : ''}`}
+                onClick={() => setActiveTab('tests')}
+              >
+                Тесты
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'results' ? styles.active : ''}`}
+                onClick={() => setActiveTab('results')}
+              >
+                Результаты
+              </button>
+            </>
+          )}
+          {userType === 'company' && (
+            <button
+              className={`${styles.tab} ${activeTab === 'institutes' ? styles.active : ''}`}
+              onClick={() => setActiveTab('institutes')}
+            >
+              Мои учебные заведения
+            </button>
+          )}
         </div>
 
         {/* Контент вкладок */}
@@ -183,46 +383,92 @@ export default function ProfilePage() {
           {activeTab === 'overview' && (
             <div className={styles.overview_tab}>
               <div className={styles.stats_grid}>
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_icon}>📊</div>
-                  <div className={styles.stat_content}>
-                    <h3>{completedTests}/{totalTests}</h3>
-                    <p>Пройдено тестов</p>
-                  </div>
-                </div>
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_icon}>📈</div>
-                  <div className={styles.stat_content}>
-                    <h3>{overallProgress}%</h3>
-                    <p>Общий прогресс</p>
-                  </div>
-                </div>
-                <div className={styles.stat_card}>
-                  <div className={styles.stat_icon}>🎯</div>
-                  <div className={styles.stat_content}>
-                    <h3>6</h3>
-                    <p>Доступно тестов</p>
-                  </div>
-                </div>
+                {userType === 'company' ? (
+                  <>
+                    <div className={styles.stat_card}>
+                      <div className={styles.stat_icon}>🏫</div>
+                      <div className={styles.stat_content}>
+                        <h3>{userInstitutes.length}</h3>
+                        <p>Мои учебные заведения</p>
+                      </div>
+                    </div>
+                    <div className={styles.stat_card}>
+                      <div className={styles.stat_icon}>📍</div>
+                      <div className={styles.stat_content}>
+                        <h3>{new Set(userInstitutes.map(i => i.location)).size}</h3>
+                        <p>Города присутствия</p>
+                      </div>
+                    </div>
+                    <div className={styles.stat_card}>
+                      <div className={styles.stat_icon}>⭐</div>
+                      <div className={styles.stat_content}>
+                        <h3>
+                          {(userInstitutes.reduce((sum, i) => sum + i.rating, 0) / (userInstitutes.length || 1)).toFixed(1)}
+                        </h3>
+                        <p>Средний рейтинг</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.stat_card}>
+                      <div className={styles.stat_icon}>📊</div>
+                      <div className={styles.stat_content}>
+                        <h3>{completedTests}/{totalTests}</h3>
+                        <p>Пройдено тестов</p>
+                      </div>
+                    </div>
+                    <div className={styles.stat_card}>
+                      <div className={styles.stat_icon}>📈</div>
+                      <div className={styles.stat_content}>
+                        <h3>{overallProgress}%</h3>
+                        <p>Общий прогресс</p>
+                      </div>
+                    </div>
+                    <div className={styles.stat_card}>
+                      <div className={styles.stat_icon}>🎯</div>
+                      <div className={styles.stat_content}>
+                        <h3>6</h3>
+                        <p>Доступно тестов</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div className={styles.welcome_section}>
-                <h2>Добро пожаловать в центр профориентации!</h2>
-                <p>
-                  Пройдите тесты для определения своих профессиональных предпочтений,
-                  навыков и способностей. Результаты помогут вам найти идеальную образовательную программу.
-                </p>
-                <button
-                  className={styles.start_tests_button}
-                  onClick={() => setActiveTab('tests')}
-                >
-                  Начать тестирование
-                </button>
-              </div>
+              {userType === 'company' ? (
+                <div className={styles.welcome_section}>
+                  <h2>Добро пожаловать, {companyData?.companyName || 'Компания'}!</h2>
+                  <p>
+                    Здесь вы можете управлять своими учебными заведениями. 
+                    Добавьте информацию о программах обучения, стоимости и требованиях к поступлению.
+                  </p>
+                  <button
+                    className={styles.start_tests_button}
+                    onClick={() => router.push('/institutes/create')}
+                  >
+                    Добавить учебное заведение
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.welcome_section}>
+                  <h2>Добро пожаловать в центр профориентации!</h2>
+                  <p>
+                    Пройдите тесты для определения своих профессиональных предпочтений,
+                    навыков и способностей. Результаты помогут вам найти идеальную образовательную программу.
+                  </p>
+                  <button
+                    className={styles.start_tests_button}
+                    onClick={() => setActiveTab('tests')}
+                  >
+                    Начать тестирование
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {activeTab === 'tests' && (
+          {activeTab === 'tests' && userType !== 'company' && (
             <div className={styles.tests_tab}>
               <h2>Профориентационные тесты</h2>
               <div className={styles.tests_grid}>
@@ -264,7 +510,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {activeTab === 'results' && (
+          {activeTab === 'results' && userType !== 'company' && (
             <div className={styles.results_tab}>
               <h2>Ваши результаты</h2>
               {completedTests === 0 ? (
@@ -293,6 +539,81 @@ export default function ProfilePage() {
                       <button className={styles.view_details_button}>
                         Подробности
                       </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'institutes' && userType === 'company' && (
+            <div className={styles.institutes_tab}>
+              <h2>Мои учебные заведения</h2>
+              
+              {loadingInstitutes ? (
+                <div className={styles.loading_container}>
+                  <div className={styles.spinner}></div>
+                  <p>Загружаем учебные заведения...</p>
+                </div>
+              ) : userInstitutes.length === 0 ? (
+                <div className={styles.no_results}>
+                  <div className={styles.no_results_icon}>🏫</div>
+                  <p>Вы еще не добавили ни одного учебного заведения</p>
+                  <button
+                    className={styles.go_tests_button}
+                    onClick={() => router.push('/institutes/create')}
+                  >
+                    Добавить учебное заведение
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.institutes_grid}>
+                  {userInstitutes.map(institute => (
+                    <div key={institute.id} className={styles.institute_card}>
+                      <div className={styles.institute_header}>
+                        <span className={styles.institute_type}>
+                          {getInstituteTypeLabel(institute.types)}
+                        </span>
+                        <span 
+                          className={styles.institute_rating}
+                          style={{ color: getRatingColor(institute.rating) }}
+                        >
+                          ⭐ {institute.rating.toFixed(1)}
+                        </span>
+                      </div>
+                      <div className={styles.institute_body}>
+                        <h3>{institute.name}</h3>
+                        <p>{institute.description}</p>
+                        <div className={styles.institute_meta}>
+                          <span>📍 {institute.location}</span>
+                          <span>💰 {institute.tuition}</span>
+                        </div>
+                        <div className={styles.institute_categories}>
+                          {institute.categoryIns.slice(0, 3).map((cat, idx) => (
+                            <span key={idx} className={styles.category_tag}>
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
+                        <div className={styles.institute_actions}>
+                          {!isViewingOtherProfile && (
+                            <>
+                              <button 
+                                className={styles.edit_button}
+                                onClick={() => router.push(`/institutes/edit/${institute.id}`)}
+                              >
+                                ✏️ Редактировать
+                              </button>
+                              <button 
+                                className={styles.delete_button}
+                                onClick={() => handleDeleteInstitute(institute.id)}
+                              >
+                                🗑️ Удалить
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

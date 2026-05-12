@@ -3,7 +3,9 @@ export interface Institutes {
   id: number;
   name: string;
   description: string;
-  image: string;
+  image?: string;
+  banner?: string;
+  website?: string;
   types: string;
   categoryIns: string[]; 
   location: string;
@@ -12,6 +14,8 @@ export interface Institutes {
   city?: string;
   minTuition?: number;
   maxTuition?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface InstitutesList {

@@ -5,7 +5,7 @@
 **Global Edu Finder** — это современное веб-приложение для поиска учебных заведений по всему миру. Проект представляет собой полнофункциональное React-приложение, построенное на базе Next.js, предназначенное для помощи студентам в поиске подходящих образовательных программ с интегрированной базой данных, API и системой аутентификации.
 
 ### 🎯 Основная цель
-Предоставить пользователям удобный инструмент для поиска и фильтрации учебных заведений с детализированной информацией о программах, стоимости обучения, рейтинге и требованиях к поступлению. Включает систему профориентационных тестов для помощи в выборе профессии.
+Предоставить пользователям удобный инструмент для поиска и фильтрации учебных заведений с детализированной информацией о программах, стоимости обучения, рейтинге и требованиях к поступлению. Включает систему профориентационных тестов для помощи в выборе профессии и поддержку различных типов пользователей (студенты, абитуриенты, школьники, компании).
 
 ## 🏗️ Архитектура и технологии
 
@@ -18,78 +18,87 @@
 - **Кэширование**: SWR для эффективного управления состоянием
 - **Линтинг**: ESLint 9
 - **API**: Next.js API Routes с Prisma Client
+- **Генерация документов**: jsPDF, docx, xlsx
 
 ### Архитектурный подход
 Проект использует **Feature-Sliced Design (FSD)** методологию с четким разделением на:
-- `src/app/` - маршруты и страницы Next.js App Router
-- `src/entities/` - бизнес-сущности
-- `src/features/` - пользовательские сценарии (login, register)
-- `src/widgets/` - крупные UI компоненты
-- `src/shared/` - переиспользуемые компоненты и утилиты
+- `src/app/` — маршруты и страницы Next.js App Router
+- `src/entities/` — бизнес-сущности
+- `src/features/` — пользовательские сценарии (login, register)
+- `src/widgets/` — крупные UI компоненты
+- `src/shared/` — переиспользуемые компоненты и утилиты
+- `src/hooks/` — кастомные React хуки
+- `src/lib/` — утилиты и конфигурация
 
-### Новые возможности (последние обновления)
-- **Система аутентификации**: NextAuth.js с регистрацией и входом
-- **Профиль пользователя**: Личный кабинет с профориентационными тестами
-- **База данных**: Полная интеграция с PostgreSQL через Prisma ORM
-- **API маршруты**: RESTful API для работы с данными учебных заведений
-- **Умная фильтрация**: Динамический подсчет результатов с учетом текущих фильтров
-- **Современный дизайн**: Обновленные SCSS стили с анимациями и градиентами
+### Последние обновления
+- **Система типов пользователей**: Поддержка student, applicant, school, company
+- **Профили компаний**: Отдельная таблица Company с полной информацией о юрлицах
+- **Владелец учебных заведений**: Связь Institute с User через ownerId
+- **Регистрация компаний**: Расширенная форма с валидацией ИНН и других данных
+- **Профиль компании**: Отображение опубликованных учебных заведений
+- **API для управления**: Маршруты для получения данных пользователя и его институтов
 
 ## 📁 Структура проекта
 
 ### Корневые файлы
 ```
-├── package.json          # Зависимости и скрипты
-├── next.config.ts        # Конфигурация Next.js
-├── tsconfig.json         # Конфигурация TypeScript
-├── postcss.config.mjs    # Конфигурация PostCSS
-├── eslint.config.mjs     # Конфигурация ESLint
-├── .env                  # Переменные окружения
-├── prisma/               # Конфигурация базы данных
-│   ├── schema.prisma     # Схема базы данных
-│   ├── seed.ts          # Скрипт заполнения данными
-│   └── migrations/      # Миграции базы данных
-└── README.md            # Базовая документация
+├── package.json              # Зависимости и скрипты
+├── next.config.ts            # Конфигурация Next.js
+├── tsconfig.json             # Конфигурация TypeScript
+├── postcss.config.mjs        # Конфигурация PostCSS
+├── eslint.config.mjs         # Конфигурация ESLint
+├── prisma.config.ts          # Конфигурация Prisma
+├── .env                      # Переменные окружения
+├── prisma/                   # Конфигурация базы данных
+│   ├── schema.prisma         # Схема базы данных
+│   ├── seed.ts               # Скрипт заполнения данными
+│   └── migrations/           # Миграции базы данных
+├── public/                   # Статические файлы
+├── src/                      # Исходный код
+├── types/                    # Глобальные типы
+└── README.md                 # Базовая документация
 ```
 
 ### Исходный код (src/)
 ```
 src/
-├── app/                  # Next.js App Router
-│   ├── page.tsx         # Главная страница
-│   ├── layout.tsx       # Корневой лейаут
-│   ├── providers.tsx    # Провайдеры (SessionProvider)
-│   ├── finder/          # Страница поиска
-│   ├── login/           # Страница входа
-│   ├── register/        # Страница регистрации
-│   ├── profile/         # Профиль пользователя
-│   ├── about/           # О проекте
-│   ├── contact/         # Контакты
-│   ├── admin/           # Админ панель
-│   ├── styles/          # Глобальные стили
-│   └── api/             # API маршруты
-│       ├── auth/        # Аутентификация
+├── app/                          # Next.js App Router
+│   ├── page.tsx                  # Главная страница
+│   ├── layout.tsx                # Корневой лейаут
+│   ├── providers.tsx             # Провайдеры (SessionProvider)
+│   ├── finder/                   # Страница поиска
+│   ├── login/                    # Страница входа
+│   ├── register/                 # Страница регистрации
+│   ├── profile/                  # Профиль пользователя
+│   ├── about/                    # О проекте
+│   ├── contact/                  # Контакты
+│   ├── admin/                    # Админ панель
+│   ├── styles/                   # Глобальные стили
+│   └── api/                      # API маршруты
+│       ├── auth/                 # Аутентификация
 │       │   ├── [...nextauth]/route.ts
-│       │   └── register/route.ts
-│       └── institutes/  # Учебные заведения
-│           ├── route.ts
-│           └── filters/route.ts
-├── lib/                 # Утилиты и конфигурация
-│   └── prisma.ts       # Клиент Prisma
-├── entities/            # Бизнес-сущности
-├── features/            # Пользовательские сценарии
-│   ├── login/           # Аутентификация
-│   └── register/        # Регистрация
-├── widgets/             # Крупные UI компоненты
-│   ├── Header/          # Шапка сайта
-│   ├── Footer/          # Подвал сайта
-│   ├── CardInstitutes/  # Карточки учебных заведений
-│   └── institution-filter/ # Панель фильтрации
-├── shared/              # Переиспользуемые компоненты
-│   └── ui/              # Базовые UI элементы
-└── hooks/               # Кастомные React хуки
-    ├── useUniversalFilter.tsx # Универсальный фильтр
-    └── useInstitutes.ts      # Работа с API
+│       │   ├── register/route.ts
+│       │   └── me/route.ts       # Данные текущего пользователя
+│       └── institutes/           # Учебные заведения
+│           ├── route.ts          # GET/POST институты
+│           ├── filters/route.ts  # Доступные фильтры
+│           └── my/route.ts       # Институты текущего пользователя
+├── lib/                          # Утилиты
+│   └── prisma.ts                 # Клиент Prisma
+├── entities/                     # Бизнес-сущности
+├── features/                     # Пользовательские сценарии
+│   ├── login/                    # Аутентификация
+│   └── register/                 # Регистрация
+├── widgets/                      # Крупные UI компоненты
+│   ├── Header/                   # Шапка сайта
+│   ├── Footer/                   # Подвал сайта
+│   ├── CardInstitutes/           # Карточки учебных заведений
+│   └── institution-filter/       # Панель фильтрации
+├── shared/                       # Переиспользуемые компоненты
+│   └── ui/                       # Базовые UI элементы
+└── hooks/                        # Кастомные React хуки
+    ├── useUniversalFilter.tsx    # Универсальный фильтр
+    └── useInstitutes.ts          # Работа с API
 ```
 
 ## 🚀 Сборка и запуск
@@ -138,11 +147,16 @@ npm run lint
 npm run db:studio      # Открыть Prisma Studio
 npm run db:reset       # Сбросить базу данных
 npm run db:seed        # Заполнить данными
+npm run db:migrate     # Миграция базы данных
+npm run db:upgrade     # Обновление базы данных
 npm run db:setup       # Полная настройка БД
+
+
+
 ```
 
 ## 🎨 Дизайн и стилизация
-
+ 
 ### Подход к стилизации
 - **Tailwind CSS 4** для утилитарных классов
 - **SCSS модули** для компонентных стилей
@@ -212,7 +226,15 @@ npm run db:setup       # Полная настройка БД
 - **JWT сессии** для безопасного хранения данных
 - **Защищенные маршруты** - перенаправление неавторизованных пользователей
 
-### 5. Профиль пользователя (`/profile`)
+### 5. Система отзывов и оценок
+- **Оценка от 1 до 5 звезд** для каждого учебного заведения
+- **Текстовые комментарии** (опционально)
+- **Один отзыв на пользователя** — уникальное ограничение на уровне базы данных
+- **Удаление отзывов** — только владелец может удалить свой отзыв
+- **Автоматический пересчет рейтинга** при добавлении/удалении отзыва
+- **Просмотр профиля** — клик на аватар отзыва открывает профиль пользователя
+
+### 6. Профиль пользователя (`/profile`)
 - **Личный кабинет** с информацией о пользователе
 - **Профориентационные тесты:**
   - Тип личности (MBTI)
@@ -223,6 +245,9 @@ npm run db:setup       # Полная настройка БД
   - Творческий потенциал
 - **Статистика** - прогресс прохождения тестов
 - **Результаты** - сохраненные результаты тестирования
+- **Управление учебными заведениями** (для компаний):
+  - Редактирование информации
+  - Удаление заведения
 
 ## 🧩 Ключевые компоненты
 
@@ -267,17 +292,26 @@ npm run db:setup       # Полная настройка БД
 ## 🗄️ База данных
 
 ### Схема базы данных
+
 ```prisma
 model Institute {
   id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(255)
   description String   @db.Text
   image       String?  @db.VarChar(500)
+  banner      String?  @db.VarChar(500)
+  website     String?  @db.VarChar(500)
   types       String   @db.VarChar(50)
   location    String   @db.VarChar(100)
+  city        String?  @db.VarChar(100)
   rating      Float    @default(0)
   tuition     String   @db.VarChar(100)
+  minTuition  Float?
+  maxTuition  Float?
   categoryIns String[] @default([])
+  ownerId     Int?
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  reviews     Review[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -287,17 +321,79 @@ model User {
   email     String   @unique
   name      String?
   password  String
+  userType  String   @default("student") // student, applicant, school, company
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  company   Company?
+  institutes Institute[]
+  reviews   Review[]
+}
+
+model Company {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactPerson String   // Контактное лицо
+  companyName   String   // Название компании/организации
+  inn           String   // ИНН
+  legalAddress  String   // Юридический адрес
+  position      String   // Должность
+  phone         String   // Телефон
+  department    String   // Название отдела
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  instituteId Int
+  rating      Int      // Оценка от 1 до 5
+  comment     String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+
+  // Уникальное ограничение - один отзыв от пользователя на одно заведение
+  @@unique([userId, instituteId])
+  @@index([instituteId])
+  @@index([userId])
+
+  @@map("reviews")
 }
 ```
 
+### Отношения между моделями
+- **User ↔ Institute**: Один пользователь может владеть несколькими учебными заведениями (через ownerId)
+- **User ↔ Company**: Один пользователь типа "company" имеет один профиль компании (1:1)
+- **Company**: Дополнительная информация для юридических лиц
+
 ### API маршруты
-- `GET /api/institutes` - Получение списка с фильтрацией
-- `POST /api/institutes` - Создание нового заведения
-- `GET /api/institutes/filters` - Получение доступных фильтров
-- `POST /api/auth/register` - Регистрация пользователя
-- `GET/POST /api/auth/[...nextauth]` - Аутентификация NextAuth
+
+**Аутентификация:**
+- `POST /api/auth/register` — Регистрация пользователя (с созданием Company для типа company)
+- `GET/POST /api/auth/[...nextauth]` — Аутентификация NextAuth
+- `GET /api/auth/me` — Данные текущего пользователя (включая id)
+
+**Учебные заведения:**
+- `GET /api/institutes` — Получение списка с фильтрацией
+- `POST /api/institutes` — Создание нового заведения (только для компаний)
+- `GET /api/institutes/my` — Институты текущего пользователя (только для компаний)
+- `GET /api/institutes/filters` — Получение доступных фильтров
+- `GET /api/institutes/:id` — Получение конкретного заведения
+- `PUT /api/institutes/:id` — Редактирование заведения (только владелец)
+- `DELETE /api/institutes/:id` — Удаление заведения (только владелец)
+
+**Отзывы:**
+- `GET /api/reviews?instituteId=ID` — Получение отзывов для заведения
+- `POST /api/reviews` — Создание отзыва (1 на пользователя на заведение)
+- `DELETE /api/reviews?reviewId=ID` — Удаление отзыва (только владелец)
+
+**Пользователи:**
+- `GET /api/users/:id` — Получение данных пользователя по ID
+- `GET /api/users/:id/institutes` — Получение учебных заведений пользователя
 
 ### Тестовые данные
 База данных предзаполнена 10 реалистичными учебными заведениями:
@@ -344,11 +440,12 @@ model User {
 ## 🚧 Планы развития
 
 ### Ближайшие задачи
-1. **Реализация профориентационных тестов** - полная логика с вопросами и ответами
+1. **Реализация профориентационных тестов** — полная логика с вопросами и ответами
 2. **Сохранение результатов** тестов в базе данных
 3. **Рекомендации** на основе результатов тестов
 4. **Интеграция** тестов с поиском учебных заведений
-5. **Админ панель** - управление учебными заведениями через UI
+5. **Админ панель** — управление учебными заведениями через UI
+6. **Редактирование/удаление** учебных заведений компаниями
 
 ### Долгосрочные цели
 - **Многоязычность** (i18n)
@@ -366,6 +463,27 @@ model User {
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/GlobalEdu"
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
+```
+
+### Конфигурация IDE
+Рекомендуемые расширения для VS Code:
+- **TypeScript Importer** — автоимпорт
+- **ESLint** — проверка кода
+- **Prettier** — форматирование
+- **Tailwind CSS IntelliSense** — автодополнение классов
+- **Prisma** — работа с базой данных
+
+### Работа с Prisma Client
+При изменении `prisma/schema.prisma` обязательно выполнить:
+```bash
+npx prisma generate
+```
+Для обновления типов TypeScript.
+
+При проблемах с типами:
+```bash
+Remove-Item -Recurse -Force node_modules/.prisma
+npx prisma generate
 ```
 
 ### Конфигурация IDE
@@ -391,6 +509,7 @@ NEXTAUTH_URL="http://localhost:3000"
 - **Комментарии** только для сложной логики
 - **Мемоизация** для оптимизации производительности
 - **API-first подход** для работы с данными
+- **Валидация на сервере** для всех входных данных
 
 ---
-*Документ обновлен с информацией о системе аутентификации, профориентационных тестах, умной фильтрации и всех последних изменениях в проекте.*
+*Документ обновлен с информацией о системе типов пользователей, профилях компаний, связях базы данных и всех последних изменениях в проекте.*
