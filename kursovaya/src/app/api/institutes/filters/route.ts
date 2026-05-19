@@ -1,15 +1,6 @@
 // src/app/api/institutes/filters/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/src/lib/prisma'
-import { Prisma } from '@prisma/client'
-
-type InstituteSelect = Prisma.InstituteGetPayload<{
-  select: {
-    types: true
-    location: true
-    categoryIns: true
-  }
-}>
 
 export async function GET() {
   try {
@@ -23,11 +14,11 @@ export async function GET() {
     })
 
     // Извлекаем уникальные значения
-    const types = [...new Set(institutes.map((i: InstituteSelect) => i.types))]
-    const locations = [...new Set(institutes.map((i: InstituteSelect) => i.location))]
+    const types = [...new Set(institutes.map((i) => i.types))]
+    const locations = [...new Set(institutes.map((i) => i.location))]
     
     // Получаем все категории из массивов
-    const allCategories = institutes.flatMap((i: InstituteSelect) => i.categoryIns)
+    const allCategories = institutes.flatMap((i) => i.categoryIns)
     const categories = [...new Set(allCategories)]
 
     // Статистика по типам

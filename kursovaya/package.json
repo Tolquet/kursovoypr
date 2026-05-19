@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:reset": "prisma migrate reset --force",
     "db:seed": "tsx prisma/seed.ts",
     "db:setup": "npm run db:reset && npm run db:seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
