@@ -28,9 +28,9 @@ export default function Home() {
       try {
         const response = await fetch('/api/institutes');
         if (response.ok) {
-          const data = await response.json();
-          // Проверяем структуру ответа - может быть объект с institutes или прямой массив
-          const institutesArray = Array.isArray(data) ? data : (data.institutes || data.data || []);
+          const result = await response.json();
+          // API возвращает объект с полем data, содержащим массив
+          const institutesArray = result.data || result.institutes || [];
           // Сортируем по рейтингу и берем топ-3
           const sorted = [...institutesArray].sort((a: Institute, b: Institute) => b.rating - a.rating).slice(0, 3);
           setTopInstitutes(sorted);
