@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
+import Icon from '@/src/shared/ui/Icon/Icon';
 import styles from './styles/edit.module.scss';
 
 type UserType = 'student' | 'applicant' | 'school' | 'company';
@@ -43,11 +44,11 @@ interface Institute {
 }
 
 const instituteTypes = [
-  { value: 'university', label: 'Университет', icon: '🎓' },
-  { value: 'college', label: 'Колледж', icon: '🏫' },
-  { value: 'institute', label: 'Институт', icon: '🏛️' },
-  { value: 'school', label: 'Школа', icon: '🏫' },
-  { value: 'academy', label: 'Академия', icon: '🎨' }
+  { value: 'university', label: 'Университет', icon: 'university' as const },
+  { value: 'college', label: 'Колледж', icon: 'college' as const },
+  { value: 'institute', label: 'Институт', icon: 'institute' as const },
+  { value: 'school', label: 'Школа', icon: 'school' as const },
+  { value: 'academy', label: 'Академия', icon: 'academy' as const }
 ];
 
 const categories = [
@@ -332,7 +333,7 @@ export default function EditInstitutePage() {
                     <img src={formData.image} alt="Preview" className={styles.preview_image} />
                   ) : (
                     <div className={styles.placeholder}>
-                      <span>📷</span>
+                      <Icon name="camera" size={48} />
                       <p>Главное изображение</p>
                     </div>
                   )}
@@ -372,7 +373,7 @@ export default function EditInstitutePage() {
                     <img src={formData.banner} alt="Banner" className={styles.preview_banner} />
                   ) : (
                     <div className={styles.placeholder}>
-                      <span>🎨</span>
+                      <Icon name="palette" size={48} />
                       <p>Баннер (опционально)</p>
                     </div>
                   )}
@@ -446,7 +447,7 @@ export default function EditInstitutePage() {
                 >
                   {instituteTypes.map(type => (
                     <option key={type.value} value={type.value}>
-                      {type.icon} {type.label}
+                      {type.label}
                     </option>
                   ))}
                 </select>

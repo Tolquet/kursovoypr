@@ -4,6 +4,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
+import Icon from '@/src/shared/ui/Icon/Icon';
 import styles from './styles/profile.module.scss';
 
 // Типы для профориентационных тестов
@@ -386,21 +387,27 @@ function ProfileContent() {
                 {userType === 'company' ? (
                   <>
                     <div className={styles.stat_card}>
-                      <div className={styles.stat_icon}>🏫</div>
+                      <div className={styles.stat_icon}>
+                        <Icon name="building" size={32} />
+                      </div>
                       <div className={styles.stat_content}>
                         <h3>{userInstitutes.length}</h3>
                         <p>Мои учебные заведения</p>
                       </div>
                     </div>
                     <div className={styles.stat_card}>
-                      <div className={styles.stat_icon}>📍</div>
+                      <div className={styles.stat_icon}>
+                        <Icon name="map-pin" size={32} />
+                      </div>
                       <div className={styles.stat_content}>
                         <h3>{new Set(userInstitutes.map(i => i.location)).size}</h3>
                         <p>Города присутствия</p>
                       </div>
                     </div>
                     <div className={styles.stat_card}>
-                      <div className={styles.stat_icon}>⭐</div>
+                      <div className={styles.stat_icon}>
+                        <Icon name="star-filled" size={32} />
+                      </div>
                       <div className={styles.stat_content}>
                         <h3>
                           {(userInstitutes.reduce((sum, i) => sum + i.rating, 0) / (userInstitutes.length || 1)).toFixed(1)}
@@ -412,21 +419,27 @@ function ProfileContent() {
                 ) : (
                   <>
                     <div className={styles.stat_card}>
-                      <div className={styles.stat_icon}>📊</div>
+                      <div className={styles.stat_icon}>
+                        <Icon name="trending-up" size={32} />
+                      </div>
                       <div className={styles.stat_content}>
                         <h3>{completedTests}/{totalTests}</h3>
                         <p>Пройдено тестов</p>
                       </div>
                     </div>
                     <div className={styles.stat_card}>
-                      <div className={styles.stat_icon}>📈</div>
+                      <div className={styles.stat_icon}>
+                        <Icon name="award" size={32} />
+                      </div>
                       <div className={styles.stat_content}>
                         <h3>{overallProgress}%</h3>
                         <p>Общий прогресс</p>
                       </div>
                     </div>
                     <div className={styles.stat_card}>
-                      <div className={styles.stat_icon}>🎯</div>
+                      <div className={styles.stat_icon}>
+                        <Icon name="target" size={32} />
+                      </div>
                       <div className={styles.stat_content}>
                         <h3>6</h3>
                         <p>Доступно тестов</p>
@@ -515,7 +528,9 @@ function ProfileContent() {
               <h2>Ваши результаты</h2>
               {completedTests === 0 ? (
                 <div className={styles.no_results}>
-                  <div className={styles.no_results_icon}>📋</div>
+                  <div className={styles.no_results_icon}>
+                    <Icon name="clipboard" size={48} />
+                  </div>
                   <p>Вы еще не прошли ни одного теста</p>
                   <button
                     className={styles.go_tests_button}
@@ -557,7 +572,9 @@ function ProfileContent() {
                 </div>
               ) : userInstitutes.length === 0 ? (
                 <div className={styles.no_results}>
-                  <div className={styles.no_results_icon}>🏫</div>
+                  <div className={styles.no_results_icon}>
+                    <Icon name="building" size={48} />
+                  </div>
                   <p>Вы еще не добавили ни одного учебного заведения</p>
                   <button
                     className={styles.go_tests_button}
@@ -578,15 +595,19 @@ function ProfileContent() {
                           className={styles.institute_rating}
                           style={{ color: getRatingColor(institute.rating) }}
                         >
-                          ⭐ {institute.rating.toFixed(1)}
+                          <Icon name="star-filled" size={16} /> {institute.rating.toFixed(1)}
                         </span>
                       </div>
                       <div className={styles.institute_body}>
                         <h3>{institute.name}</h3>
                         <p>{institute.description}</p>
                         <div className={styles.institute_meta}>
-                          <span>📍 {institute.location}</span>
-                          <span>💰 {institute.tuition}</span>
+                          <span>
+                            <Icon name="map-pin" size={14} /> {institute.location}
+                          </span>
+                          <span>
+                            <Icon name="money" size={14} /> {institute.tuition}
+                          </span>
                         </div>
                         <div className={styles.institute_categories}>
                           {institute.categoryIns.slice(0, 3).map((cat, idx) => (
@@ -602,13 +623,13 @@ function ProfileContent() {
                                 className={styles.edit_button}
                                 onClick={() => router.push(`/institutes/edit/${institute.id}`)}
                               >
-                                ✏️ Редактировать
+                                <Icon name="edit" size={16} /> Редактировать
                               </button>
                               <button 
                                 className={styles.delete_button}
                                 onClick={() => handleDeleteInstitute(institute.id)}
                               >
-                                🗑️ Удалить
+                                <Icon name="trash" size={16} /> Удалить
                               </button>
                             </>
                           )}

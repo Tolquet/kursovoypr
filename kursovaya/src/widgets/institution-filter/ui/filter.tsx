@@ -1,6 +1,7 @@
 // src/widgets/institution-filter/ui/filter.tsx
 import { useState, useMemo, useCallback } from 'react';
 import { FilterPanelProps, FilterState } from '@/src/widgets/institution-filter/types/filters';
+import Icon from '@/src/shared/ui/Icon/Icon';
 import "../styles/filter.scss"
 
 // Функция для преобразования типа в читаемый формат
@@ -275,13 +276,16 @@ export function FilterPanel({
     <div className="filter-panel">
       {/* Search */}
       <div className="filter-section">
-        <input
-          type="text"
-          placeholder="🔍 Поиск по названию..."
-          value={filters.search}
-          onChange={handleSearchChange}
-          className="search-input"
-        />
+        <div className="search-wrapper">
+          <Icon name="search" size={18} className="search-icon-svg" />
+          <input
+            type="text"
+            placeholder="Поиск по названию..."
+            value={filters.search}
+            onChange={handleSearchChange}
+            className="search-input"
+          />
+        </div>
       </div>
 
       {/* Filter buttons row */}
@@ -290,7 +294,7 @@ export function FilterPanel({
           className={`filter-btn ${filters.selectedTypes.length > 0 ? 'active' : ''} ${openDropdowns.includes('types') ? 'opened' : ''}`}
           onClick={() => toggleDropdown('types')}
         >
-          <span className="filter-icon">🎓</span>
+          <span className="filter-icon"><Icon name="university" size={18} /></span>
           <span>Типы</span>
           {filters.selectedTypes.length > 0 && (
             <span className="filter-count">{filters.selectedTypes.length}</span>
@@ -301,7 +305,7 @@ export function FilterPanel({
           className={`filter-btn ${filters.selectedCategories.length > 0 ? 'active' : ''} ${openDropdowns.includes('categories') ? 'opened' : ''}`}
           onClick={() => toggleDropdown('categories')}
         >
-          <span className="filter-icon">📚</span>
+          <span className="filter-icon"><Icon name="award" size={18} /></span>
           <span>Категории</span>
           {filters.selectedCategories.length > 0 && (
             <span className="filter-count">{filters.selectedCategories.length}</span>
@@ -313,7 +317,7 @@ export function FilterPanel({
             className={`filter-btn ${filters.selectedCity ? 'active' : ''} ${openDropdowns.includes('city') ? 'opened' : ''}`}
             onClick={() => toggleDropdown('city')}
           >
-            <span className="filter-icon">🏙️</span>
+            <span className="filter-icon"><Icon name="building" size={18} /></span>
             <span>Город</span>
           </button>
         )}
@@ -325,7 +329,7 @@ export function FilterPanel({
           } ${openDropdowns.includes('price') ? 'opened' : ''}`}
           onClick={() => toggleDropdown('price')}
         >
-          <span className="filter-icon">💰</span>
+          <span className="filter-icon"><Icon name="money" size={18} /></span>
           <span>Цена</span>
         </button>
       </div>
@@ -460,12 +464,12 @@ export function FilterPanel({
                 className="tag-remove" 
                 onClick={() => removeTag(tag.type, tag.type === 'category' && tag.label.startsWith('+') ? '' : tag.label)}
               >
-                ✕
+                <Icon name="close" size={14} />
               </button>
             </span>
           ))}
           <button className="reset-all-btn" onClick={handleReset}>
-            ✕ Сбросить все
+            <Icon name="close" size={14} /> Сбросить все
           </button>
         </div>
       )}

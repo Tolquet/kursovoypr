@@ -25,24 +25,25 @@ export default function Header() {
           <Link href="/">
             <Image
               className={styles.logo_image}
-              src="/"
+              src="https://res.cloudinary.com/dffpkcdq7/image/upload/v1779127750/%D0%BB%D0%BE%D0%B3%D0%BE%D1%82%D0%B8%D0%BF%D1%87%D0%B8%D0%BA_edu.png"
               alt="Global Edu Logo"
-              width={20}
-              height={20}
+              width={200}
+              height={70}
+              priority
+    
             />
-            Global Edu
           </Link>
         </div>
         <div className={styles.header_button}>
-          <button onClick={() => handleTypeClick('university')} className={styles.nav_link}>University</button>
-          <button onClick={() => handleTypeClick('college')} className={styles.nav_link}>College</button>
-          <button onClick={() => handleTypeClick('school')} className={styles.nav_link}>School</button>
+          <button onClick={() => handleTypeClick('university')} className={styles.nav_link}>Университеты</button>
+          <button onClick={() => handleTypeClick('college')} className={styles.nav_link}>Колледжи</button>
+          <button onClick={() => handleTypeClick('school')} className={styles.nav_link}>Школы</button>
           <button onClick={() => handleTypeClick(null)} className={styles.nav_link}>Все заведения</button>
         </div>
 
         <div className={styles.contact}>
           <a href="tel:+79677158899">+7 967 715 88 99</a>
-          <a href="mailto:info@globaledu.com">info@globaledu.com</a>
+          <a href="mailto:anatoly.shv05@mail.ru">anatoly.shv05@mail.ru</a>
         </div>
 
         <div className={styles.auth_buttons}>
@@ -70,14 +71,13 @@ export default function Header() {
       </nav>
 
       <div className={styles.help}>
-        <p>Need help choosing? Contact our educational consultants!</p>
+        <p>Нужна помощь в выборе? Свяжитесь с нашими консультантами!</p>
         <div>
-          
-          <a href="tel:+18001234567">+7 (800) 123-4567</a>
+          <a href="tel:+79677158899">+7(967)-715-88-99</a>
         </div>
         <div>
           
-          <a href="mailto:support@globaledu.com">support@globaledu.com</a>
+          <a href="mailto:anatoly.shv05@mail.ru">anatoly.shv05@mail.ru</a>
         </div>
         <button className={styles.live_chat_button}>Live Chat</button>
         <div>ПОН-ПЯТ С 09.00-18.00</div>

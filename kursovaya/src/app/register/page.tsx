@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Icon from '@/src/shared/ui/Icon/Icon';
 import styles from './styles/register.module.scss';
 
 type UserType = 'student' | 'applicant' | 'school' | 'company';
@@ -213,7 +214,9 @@ export default function RegisterPage() {
                   onChange={(e) => setUserType(e.target.value as UserType)}
                 />
                 <span className={styles.user_type_card}>
-                  <span className={styles.user_type_icon}>🎓</span>
+                  <span className={styles.user_type_icon}>
+                    <Icon name="university" size={32} />
+                  </span>
                   <span className={styles.user_type_title}>Студент</span>
                   <span className={styles.user_type_desc}>Учащийся учебного заведения</span>
                 </span>
@@ -228,7 +231,9 @@ export default function RegisterPage() {
                   onChange={(e) => setUserType(e.target.value as UserType)}
                 />
                 <span className={styles.user_type_card}>
-                  <span className={styles.user_type_icon}>📝</span>
+                  <span className={styles.user_type_icon}>
+                    <Icon name="user-check" size={32} />
+                  </span>
                   <span className={styles.user_type_title}>Абитуриент</span>
                   <span className={styles.user_type_desc}>Поступающий в учебное заведение</span>
                 </span>
@@ -243,7 +248,9 @@ export default function RegisterPage() {
                   onChange={(e) => setUserType(e.target.value as UserType)}
                 />
                 <span className={styles.user_type_card}>
-                  <span className={styles.user_type_icon}>🏫</span>
+                  <span className={styles.user_type_icon}>
+                    <Icon name="school" size={32} />
+                  </span>
                   <span className={styles.user_type_title}>Школьник</span>
                   <span className={styles.user_type_desc}>Учащийся школы</span>
                 </span>
@@ -258,7 +265,9 @@ export default function RegisterPage() {
                   onChange={(e) => setUserType(e.target.value as UserType)}
                 />
                 <span className={styles.user_type_card}>
-                  <span className={styles.user_type_icon}>🏢</span>
+                  <span className={styles.user_type_icon}>
+                    <Icon name="building" size={32} />
+                  </span>
                   <span className={styles.user_type_title}>Компания</span>
                   <span className={styles.user_type_desc}>Юридическое лицо / Организация</span>
                 </span>

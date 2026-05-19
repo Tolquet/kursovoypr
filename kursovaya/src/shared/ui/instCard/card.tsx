@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { useCallback } from 'react';
 import { Institutes } from '@/src/widgets/CardInstitutes/types/cardIst'
 import styles from './styles/style.module.scss'
+import Icon from '@/src/shared/ui/Icon/Icon'
 
 interface InstCardProps extends Institutes {
   onOpenModal?: (institute: Institutes | null) => void;
@@ -16,15 +17,15 @@ const getRatingColor = (rating: number): string => {
 };
 
 // Функция для получения иконки типа учреждения
-const getTypeIcon = (type: string): string => {
-  const icons: Record<string, string> = {
-    'university': '🎓',
-    'college': '🏫',
-    'institute': '🏛️',
-    'school': '🏫',
-    'academy': '🎨'
+const getTypeIcon = (type: string) => {
+  const iconMap: Record<string, 'university' | 'college' | 'institute' | 'school' | 'academy'> = {
+    'university': 'university',
+    'college': 'college',
+    'institute': 'institute',
+    'school': 'school',
+    'academy': 'academy'
   };
-  return icons[type] || '🏢';
+  return <Icon name={iconMap[type] || 'building'} size={16} />;
 };
 
 // Функция для форматирования цены
@@ -92,7 +93,9 @@ export default function InstCard(props: InstCardProps) {
                 </div>
                 {city && (
                     <div className={styles.cityBadge}>
-                        <span className={styles.cityIcon}>🏙️</span>
+                        <span className={styles.cityIcon}>
+                            <Icon name="building" size={14} />
+                        </span>
                         <span className={styles.cityText}>{city}</span>
                     </div>
                 )}
@@ -107,11 +110,15 @@ export default function InstCard(props: InstCardProps) {
                 
                 <div className={styles.cardMeta}>
                     <div className={styles.location}>
-                        <span className={styles.locationIcon}>📍</span>
+                        <span className={styles.locationIcon}>
+                            <Icon name="map-pin" size={14} />
+                        </span>
                         <span className={styles.locationText}>{location}</span>
                     </div>
                     <div className={styles.rating} style={{ color: getRatingColor(rating) }}>
-                        <span className={styles.ratingStars}>★</span>
+                        <span className={styles.ratingStars}>
+                            <Icon name="star-filled" size={14} />
+                        </span>
                         <span className={styles.ratingValue}>{rating.toFixed(1)}</span>
                     </div>
                 </div>

@@ -1,7 +1,60 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from "next/link";
 import styles from "./styles/home.module.scss";
 
+interface Institute {
+  id: number;
+  name: string;
+  description: string;
+  image?: string;
+  location: string;
+  city?: string;
+  rating: number;
+  tuition: string;
+  minTuition?: number;
+  maxTuition?: number;
+  types: string;
+  categoryIns: string[];
+}
+
 export default function Home() {
+  const [topInstitutes, setTopInstitutes] = useState<Institute[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTopInstitutes = async () => {
+      try {
+        const response = await fetch('/api/institutes');
+        if (response.ok) {
+          const data = await response.json();
+          // Проверяем структуру ответа - может быть объект с institutes или прямой массив
+          const institutesArray = Array.isArray(data) ? data : (data.institutes || data.data || []);
+          // Сортируем по рейтингу и берем топ-3
+          const sorted = [...institutesArray].sort((a: Institute, b: Institute) => b.rating - a.rating).slice(0, 3);
+          setTopInstitutes(sorted);
+        }
+      } catch (error) {
+        console.error('Error fetching institutes:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopInstitutes();
+  }, []);
+
+  const getTypeIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      'university': '🎓',
+      'college': '🏫',
+      'institute': '🏛️',
+      'school': '🏫',
+      'academy': '🎨'
+    };
+    return icons[type.toLowerCase()] || '🎓';
+  };
   return (
     <>
       {/* Hero Section */}
@@ -167,134 +220,80 @@ export default function Home() {
           </div>
           
           <div className={styles.universitiesGrid}>
-            {/* Uni Card 1 - МГУ */}
-            <div className={styles.universityCard}>
-              <div 
-                className={styles.cardImage}
-                style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1564981797816-1043664bf78d?w=600&q=80")' }}
-              >
-                <span className={styles.rating}>
-                  <svg className={styles.starIcon} fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  4.9
-                </span>
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.cardInfo}>
-                    <h4 className={styles.cardName}>МГУ им. Ломоносова</h4>
-                    <p className={styles.cardLocation}>
-                      <svg className={styles.locationIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            {loading ? (
+              // Loading skeleton
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className={styles.universityCard} style={{ animation: 'pulse 2s infinite' }}>
+                    <div 
+                      className={styles.cardImage}
+                      style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1564981797816-1043664bf78d?w=600&q=80")', background: '#e5e7eb' }}
+                    ></div>
+                    <div className={styles.cardBody}>
+                      <div style={{ height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+                      <div style={{ height: '16px', background: '#e5e7eb', borderRadius: '4px', width: '70%' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : topInstitutes.length > 0 ? (
+              topInstitutes.map((institute, index) => (
+                <div 
+                  key={institute.id} 
+                  className={styles.universityCard}
+                  style={{ animation: `slideUp 0.6s ease-out ${index * 0.2}s both` }}
+                >
+                  <div 
+                    className={styles.cardImage}
+                    style={{ 
+                      backgroundImage: institute.image ? `url("${institute.image}")` : 'url("https://images.unsplash.com/photo-1564981797816-1043664bf78d?w=600&q=80")' 
+                    }}
+                  >
+                    <span className={styles.rating}>
+                      <svg className={styles.starIcon} fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      Москва, Россия
-                    </p>
+                      {institute.rating.toFixed(1)}
+                    </span>
                   </div>
-                  <div className={styles.cardIcon}>
-                    <svg className={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className={styles.cardTags}>
-                  <span className={styles.tag}>Наука</span>
-                  <span className={styles.tag}>Гуманитарные</span>
-                  <span className={styles.tag}>Инженерия</span>
-                </div>
-                <div className={styles.cardFooter}>
-                  <span className={styles.price}>от 250 000 ₽ <span className={styles.priceNote}>/ год</span></span>
-                  <Link href="/finder" className={styles.detailsLink}>Подробнее →</Link>
-                </div>
-              </div>
-            </div>
-            
-            {/* Uni Card 2 - СПбПУ */}
-            <div className={styles.universityCard}>
-              <div 
-                className={styles.cardImage}
-                style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1598890777032-bde835ba27c2?w=600&q=80")' }}
-              >
-                <span className={styles.rating}>
-                  <svg className={styles.starIcon} fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  4.8
-                </span>
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.cardInfo}>
-                    <h4 className={styles.cardName}>СПбПУ Петра Великого</h4>
-                    <p className={styles.cardLocation}>
-                      <svg className={styles.locationIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      Санкт-Петербург, Россия
-                    </p>
-                  </div>
-                  <div className={styles.cardIcon}>
-                    <svg className={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                    </svg>
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardHeader}>
+                      <div className={styles.cardInfo}>
+                        <h4 className={styles.cardName}>{institute.name}</h4>
+                        <p className={styles.cardLocation}>
+                          <svg className={styles.locationIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {institute.city || institute.location}, Россия
+                        </p>
+                      </div>
+                      <div className={styles.cardIcon}>
+                        <span style={{ fontSize: '18px' }}>{getTypeIcon(institute.types)}</span>
+                      </div>
+                    </div>
+                    <div className={styles.cardTags}>
+                      {institute.categoryIns.slice(0, 3).map((category, idx) => (
+                        <span key={idx} className={styles.tag}>
+                          {category}
+                        </span>
+                      ))}
+                    </div>
+                    <div className={styles.cardFooter}>
+                      <span className={styles.price}>
+                        {institute.tuition} 
+                        <span className={styles.priceNote}> / год</span>
+                      </span>
+                      <Link href="/finder" className={styles.detailsLink}>Подробнее →</Link>
+                    </div>
                   </div>
                 </div>
-                <div className={styles.cardTags}>
-                  <span className={styles.tag}>Технические</span>
-                  <span className={styles.tag}>IT</span>
-                  <span className={styles.tag}>Инженерия</span>
-                </div>
-                <div className={styles.cardFooter}>
-                  <span className={styles.price}>от 180 000 ₽ <span className={styles.priceNote}>/ год</span></span>
-                  <Link href="/finder" className={styles.detailsLink}>Подробнее →</Link>
-                </div>
-              </div>
-            </div>
-            
-            {/* Uni Card 3 - Финансовый университет */}
-            <div className={styles.universityCard}>
-              <div 
-                className={styles.cardImage}
-                style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80")' }}
-              >
-                <span className={styles.rating}>
-                  <svg className={styles.starIcon} fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  4.7
-                </span>
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.cardInfo}>
-                    <h4 className={styles.cardName}>Финансовый университет</h4>
-                    <p className={styles.cardLocation}>
-                      <svg className={styles.locationIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      Москва, Россия
-                    </p>
-                  </div>
-                  <div className={styles.cardIcon}>
-                    <svg className={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className={styles.cardTags}>
-                  <span className={styles.tag}>Экономика</span>
-                  <span className={styles.tag}>Финансы</span>
-                  <span className={styles.tag}>Бизнес</span>
-                </div>
-                <div className={styles.cardFooter}>
-                  <span className={styles.price}>от 200 000 ₽ <span className={styles.priceNote}>/ год</span></span>
-                  <Link href="/finder" className={styles.detailsLink}>Подробнее →</Link>
-                </div>
-              </div>
-            </div>
+              ))
+            ) : (
+              <p style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                Учебные заведения не найдены
+              </p>
+            )}
           </div>
           
           <div className={styles.viewAllButton}>

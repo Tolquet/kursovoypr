@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Icon from '@/src/shared/ui/Icon/Icon';
 import styles from './styles/instituteModal.module.scss';
 
 interface Institute {
@@ -53,15 +54,15 @@ const getTypeLabel = (type: string): string => {
   return labels[type] || type;
 };
 
-const getTypeIcon = (type: string): string => {
-  const icons: Record<string, string> = {
-    'university': '🎓',
-    'college': '🏫',
-    'institute': '🏛️',
-    'school': '🏫',
-    'academy': '🎨'
+const getTypeIcon = (type: string) => {
+  const icons: Record<string, 'university' | 'college' | 'institute' | 'school' | 'academy'> = {
+    'university': 'university',
+    'college': 'college',
+    'institute': 'institute',
+    'school': 'school',
+    'academy': 'academy'
   };
-  return icons[type] || '🏢';
+  return <Icon name={icons[type] || 'building'} size={20} />;
 };
 
 const getCategoryLabel = (category: string): string => {
@@ -227,7 +228,7 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
             className={`${styles.star} ${star <= newRating ? styles.active : ''}`}
             onClick={() => handleStarClick(star)}
           >
-            ★
+            <Icon name="star-filled" size={28} />
           </span>
         ))}
       </div>
@@ -238,7 +239,7 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
     <div className={styles.modal_overlay} onClick={handleOverlayClick}>
       <div className={styles.modal_content}>
         <button className={styles.close_button} onClick={onCloseAction}>
-          ✕
+          <Icon name="close" size={24} />
         </button>
 
         {/* Баннер */}
@@ -260,15 +261,19 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
 
             <div className={styles.modal_meta}>
               <div className={styles.location_badge}>
-                <span className={styles.locationIcon}>📍</span>
+                <span className={styles.locationIcon}>
+                  <Icon name="map-pin" size={16} />
+                </span>
                 <span className={styles.locationText}>{institute.location}</span>
               </div>
-              
+
               <div 
                 className={styles.rating_badge}
                 style={{ color: getRatingColor(institute.rating) }}
               >
-                <span className={styles.ratingStars}>★</span>
+                <span className={styles.ratingStars}>
+                  <Icon name="star-filled" size={16} />
+                </span>
                 <span className={styles.ratingValue}>{institute.rating.toFixed(1)}</span>
               </div>
             </div>
@@ -297,7 +302,9 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
           {/* Информация */}
           <div className={styles.info_grid}>
             <div className={styles.info_card}>
-              <div className={styles.info_icon}>📍</div>
+              <div className={styles.info_icon}>
+                <Icon name="map-pin" size={28} />
+              </div>
               <div className={styles.info_content}>
                 <h3>Локация</h3>
                 <p>{institute.location}</p>
@@ -306,7 +313,9 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
             </div>
 
             <div className={styles.info_card}>
-              <div className={styles.info_icon}>⭐</div>
+              <div className={styles.info_icon}>
+                <Icon name="star-filled" size={28} />
+              </div>
               <div className={styles.info_content}>
                 <h3>Локальный рейтинг</h3>
                 <p style={{ color: getRatingColor(institute.rating) }}>
@@ -316,7 +325,9 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
             </div>
 
             <div className={styles.info_card}>
-              <div className={styles.info_icon}>💰</div>
+              <div className={styles.info_icon}>
+                <Icon name="money" size={28} />
+              </div>
               <div className={styles.info_content}>
                 <h3>Стоимость</h3>
                 {institute.minTuition && institute.maxTuition ? (
@@ -379,7 +390,9 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
                         </div>
                         <div className={styles.review_actions}>
                           <div className={styles.review_rating}>
-                            {'⭐'.repeat(review.rating)}
+                            {Array.from({ length: review.rating }).map((_, i) => (
+                              <Icon key={i} name="star-filled" size={16} />
+                            ))}
                           </div>
                           {isOwner && (
                             <button
@@ -387,7 +400,7 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
                               onClick={() => handleDeleteReview(review.id)}
                               title="Удалить отзыв"
                             >
-                              🗑️
+                              <Icon name="trash" size={16} />
                             </button>
                           )}
                         </div>
@@ -458,7 +471,7 @@ export default function InstituteModal({ institute, onCloseAction }: InstituteMo
                 className={styles.primary_button}
                 style={{ textDecoration: 'none' }}
               >
-                🌐 Подробнее на сайте
+                <Icon name="globe" size={20} /> Подробнее на сайте
               </a>
             )}
             <button className={styles.secondary_button} onClick={onCloseAction}>
