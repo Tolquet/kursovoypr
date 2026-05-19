@@ -1,6 +1,8 @@
 // src/app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/src/lib/prisma'
+import { PrismaClient } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 interface CompanyInput {
@@ -160,7 +162,7 @@ export async function POST(request: NextRequest) {
     let user;
 
     try {
-      user = await prisma.$transaction(async (tx) => {
+      user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         if (userType === 'company' && companyData) {
           // Сначала создаем пользователя с company
           const newUser = await tx.user.create({
