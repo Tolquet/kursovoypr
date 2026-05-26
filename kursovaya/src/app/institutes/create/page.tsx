@@ -24,6 +24,21 @@ interface FormData {
   website: string;
 }
 
+interface PaymentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  instituteName: string;
+  onSubmitPayment: (paymentData: PaymentData) => Promise<void>;
+}
+
+interface PaymentData {
+  cardNumber: string;
+  cardName: string;
+  expiryDate: string;
+  cvv: string;
+  paymentMethod: 'card' | 'sbp' | 'yandex';
+}
+
 const instituteTypes = [
   { value: 'university', label: 'Университет', icon: 'university' as const },
   { value: 'college', label: 'Колледж', icon: 'college' as const },
@@ -41,6 +56,245 @@ const categories = [
   'ядерная-физика', 'управленческий', 'менеджмент', 'администрирование', 'торговля'
 ];
 
+// Модальное окно оплаты
+function PaymentModal({ isOpen, onClose, instituteName, onSubmitPayment }: PaymentModalProps) {
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'sbp' | 'yandex'>('card');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '').slice(0, 16);
+    value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+    setCardNumber(value);
+  };
+
+  const handleExpiryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (value.length >= 2) {
+      value = value.slice(0, 2) + '/' + value.slice(2);
+    }
+    setExpiryDate(value);
+  };
+
+  const handleCVVChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCvv(e.target.value.replace(/\D/g, '').slice(0, 3));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (paymentMethod === 'card') {
+      if (!cardNumber || cardNumber.replace(/\s/g, '').length !== 16) {
+        setError('Введите корректный номер карты');
+        return;
+      }
+      if (!cardName) {
+        setError('Введите имя владельца карты');
+        return;
+      }
+      if (!expiryDate || expiryDate.length !== 5) {
+        setError('Введите корректную дату истечения (MM/YY)');
+        return;
+      }
+      if (!cvv || cvv.length !== 3) {
+        setError('Введите CVV код');
+        return;
+      }
+    }
+
+    setIsProcessing(true);
+
+    try {
+      await onSubmitPayment({
+        cardNumber,
+        cardName,
+        expiryDate,
+        cvv,
+        paymentMethod
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка оплаты');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className={styles.payment_modal_overlay}>
+      <div className={styles.payment_modal}>
+        <div className={styles.payment_modal_header}>
+          <h2>Оплата публикации</h2>
+          <button onClick={onClose} className={styles.payment_close_button}>
+            <Icon name="close" size={24} />
+          </button>
+        </div>
+
+        <div className={styles.payment_modal_body}>
+          <div className={styles.payment_summary}>
+            <p className={styles.payment_summary_text}>
+              Публикация учебного заведения: <strong>{instituteName || 'Новое заведение'}</strong>
+            </p>
+            <p className={styles.payment_price}>
+              5 000 ₽ <span className={styles.payment_price_note}>/ заведение</span>
+            </p>
+          </div>
+
+          <div className={styles.payment_methods}>
+            <h3>Способ оплаты</h3>
+            <div className={styles.payment_method_options}>
+              <button
+                type="button"
+                className={`${styles.payment_method_card} ${paymentMethod === 'card' ? styles.active : ''}`}
+                onClick={() => setPaymentMethod('card')}
+              >
+                <Icon name="money" size={24} />
+                <span>Банковская карта</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.payment_method_card} ${paymentMethod === 'sbp' ? styles.active : ''}`}
+                onClick={() => setPaymentMethod('sbp')}
+              >
+                <span style={{ fontSize: '24px' }}>📱</span>
+                <span>СБП</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.payment_method_card} ${paymentMethod === 'yandex' ? styles.active : ''}`}
+                onClick={() => setPaymentMethod('yandex')}
+              >
+                <span style={{ fontSize: '24px' }}>💳</span>
+                <span>Yandex Pay</span>
+              </button>
+            </div>
+          </div>
+
+          {paymentMethod === 'card' && (
+            <form onSubmit={handleSubmit} className={styles.payment_form}>
+              <div className={styles.form_group}>
+                <label>Номер карты</label>
+                <input
+                  type="text"
+                  value={cardNumber}
+                  onChange={handleCardNumberChange}
+                  placeholder="0000 0000 0000 0000"
+                  maxLength={19}
+                />
+              </div>
+
+              <div className={styles.form_group}>
+                <label>Имя владельца</label>
+                <input
+                  type="text"
+                  value={cardName}
+                  onChange={(e) => setCardName(e.target.value.toUpperCase())}
+                  placeholder="IVAN IVANOV"
+                  maxLength={25}
+                />
+              </div>
+
+              <div className={styles.form_row}>
+                <div className={styles.form_group}>
+                  <label>Срок действия</label>
+                  <input
+                    type="text"
+                    value={expiryDate}
+                    onChange={handleExpiryDateChange}
+                    placeholder="MM/YY"
+                    maxLength={5}
+                  />
+                </div>
+
+                <div className={styles.form_group}>
+                  <label>CVV/CVC</label>
+                  <input
+                    type="password"
+                    value={cvv}
+                    onChange={handleCVVChange}
+                    placeholder="123"
+                    maxLength={3}
+                  />
+                </div>
+              </div>
+
+              {error && <div className={styles.payment_error}>{error}</div>}
+
+              <button
+                type="submit"
+                className={styles.payment_submit_button}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <span className={styles.spinner}></span>
+                    Обработка...
+                  </>
+                ) : (
+                  <>
+                    <span>Оплатить 5 000 ₽</span>
+                    <Icon name="check" size={20} />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {paymentMethod === 'sbp' && (
+            <div className={styles.sbp_section}>
+              <div className={styles.sbp_qr}>
+                <div className={styles.sbp_qr_placeholder}>
+                  <span style={{ fontSize: '48px' }}>📱</span>
+                </div>
+                <p>Отсканируйте QR-код через приложение вашего банка</p>
+              </div>
+              <button
+                type="button"
+                className={styles.payment_submit_button}
+                onClick={async () => {
+                  setIsProcessing(true);
+                  await onSubmitPayment({ paymentMethod: 'sbp', cardNumber: '', cardName: '', expiryDate: '', cvv: '' });
+                  setIsProcessing(false);
+                }}
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Обработка...' : 'Я оплатил'}
+              </button>
+            </div>
+          )}
+
+          {paymentMethod === 'yandex' && (
+            <div className={styles.yandex_section}>
+              <div className={styles.yandex_info}>
+                <span style={{ fontSize: '48px' }}>💳</span>
+                <p>Перейдите в Yandex Pay для завершения оплаты</p>
+              </div>
+              <button
+                type="button"
+                className={styles.payment_submit_button}
+                onClick={async () => {
+                  setIsProcessing(true);
+                  await onSubmitPayment({ paymentMethod: 'yandex', cardNumber: '', cardName: '', expiryDate: '', cvv: '' });
+                  setIsProcessing(false);
+                }}
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Обработка...' : 'Перейти к оплате'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CreateInstitutePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -49,6 +303,7 @@ export default function CreateInstitutePage() {
   const [success, setSuccess] = useState(false);
   const [userType, setUserType] = useState<UserType>('student');
   const [uploading, setUploading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   
   // Ссылки на Input для загрузки файлов
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -188,8 +443,19 @@ export default function CreateInstitutePage() {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePaymentSubmit = async (paymentData: PaymentData) => {
+    // Здесь будет интеграция с платежной системой
+    // Для демо-режима просто имитируем успешную оплату
+    console.log('Payment data:', paymentData);
+    
+    // Имитация задержки обработки
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // После успешной оплаты создаем заведение
+    await handleCreateWithoutPayment();
+  };
+
+  const handleCreateWithoutPayment = async () => {
     setError('');
 
     // Валидация
@@ -241,15 +507,39 @@ export default function CreateInstitutePage() {
       }
 
       setSuccess(true);
+      setShowPaymentModal(false);
       setTimeout(() => {
         router.push('/profile');
       }, 2000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Ошибка при создании';
       setError(errorMessage);
+      throw err;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Открываем модальное окно оплаты вместо прямой отправки
+    if (!formData.name) {
+      setError('Укажите название');
+      return;
+    }
+    if (!formData.description) {
+      setError('Укажите описание');
+      return;
+    }
+    if (!formData.location) {
+      setError('Укажите адрес');
+      return;
+    }
+    if (formData.categoryIns.length === 0) {
+      setError('Выберите хотя бы одну категорию');
+      return;
+    }
+    setShowPaymentModal(true);
   };
 
   // Показываем загрузку
@@ -524,7 +814,7 @@ export default function CreateInstitutePage() {
             </div>
           </div>
 
-          <div className={styles.form_actions}>
+        <div className={styles.form_actions}>
             <button
               type="button"
               onClick={() => router.back()}
@@ -537,10 +827,18 @@ export default function CreateInstitutePage() {
               className={styles.submit_button}
               disabled={isLoading || uploading}
             >
-              {isLoading ? 'Создание...' : 'Создать учебное заведение'}
+              {isLoading ? 'Обработка...' : 'Перейти к оплате'}
             </button>
           </div>
         </form>
+
+        {/* Модальное окно оплаты */}
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          instituteName={formData.name}
+          onSubmitPayment={handlePaymentSubmit}
+        />
       </div>
     </div>
   );
