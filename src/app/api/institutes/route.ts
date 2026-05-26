@@ -17,6 +17,9 @@ interface UserWithUserType {
 
 export async function GET(request: NextRequest) {
   try {
+    // Проверка подключения к БД
+    await prisma.$connect()
+    
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
     const type = searchParams.get('type')
@@ -65,7 +68,8 @@ export async function GET(request: NextRequest) {
       { 
         success: false, 
         error: 'Failed to fetch institutes',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     )
