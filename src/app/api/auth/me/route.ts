@@ -66,6 +66,10 @@ export async function GET() {
         name: userData.name
       },
       userType: userData.userType,
+      educationLevel: userData.educationLevel,
+      egeScore: userData.egeScore,
+      gpa: userData.gpa,
+      currentClass: userData.currentClass,
       company: userData.userType === 'company' && userData.company ? {
         companyName: userData.company.companyName,
         inn: userData.company.inn,

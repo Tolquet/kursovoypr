@@ -22,6 +22,13 @@ interface FormData {
   image: string;
   banner: string;
   website: string;
+  // Образовательные уровни
+  accepts9Class: boolean;
+  accepts11Class: boolean;
+  requiresEge: boolean;
+  minEgeScore: string;
+  requiresGpa: boolean;
+  minGpa: string;
 }
 
 interface PaymentModalProps {
@@ -321,7 +328,14 @@ export default function CreateInstitutePage() {
     categoryIns: [],
     image: '',
     banner: '',
-    website: ''
+    website: '',
+    // Образовательные уровни
+    accepts9Class: false,
+    accepts11Class: false,
+    requiresEge: false,
+    minEgeScore: '',
+    requiresGpa: false,
+    minGpa: ''
   });
 
   // Перенаправляем неавторизованных пользователей
@@ -491,7 +505,14 @@ export default function CreateInstitutePage() {
         categoryIns: formData.categoryIns,
         image: formData.image || null,
         banner: formData.banner || null,
-        website: formData.website || null
+        website: formData.website || null,
+        // Образовательные уровни
+        accepts9Class: formData.accepts9Class,
+        accepts11Class: formData.accepts11Class,
+        requiresEge: formData.requiresEge,
+        minEgeScore: formData.requiresEge && formData.minEgeScore ? parseInt(formData.minEgeScore) : null,
+        requiresGpa: formData.requiresGpa,
+        minGpa: formData.requiresGpa && formData.minGpa ? parseFloat(formData.minGpa) : null
       };
 
       const response = await fetch('/api/institutes', {
@@ -811,6 +832,109 @@ export default function CreateInstitutePage() {
                   </span>
                 </label>
               ))}
+            </div>
+          </div>
+
+          {/* Образовательные уровни поступления */}
+          <div className={styles.form_section}>
+            <h3 className={styles.section_title}>Требования к поступлению</h3>
+            <p className={styles.form_hint}>Укажите, какие уровни образования принимаются в ваше учебное заведение</p>
+            
+            <div className={styles.education_levels_grid}>
+              {/* Прием после 9 классов */}
+              <label className={styles.education_level_card}>
+                <input
+                  type="checkbox"
+                  checked={formData.accepts9Class}
+                  onChange={(e) => setFormData(prev => ({ ...prev, accepts9Class: e.target.checked }))}
+                />
+                <div className={styles.education_level_content}>
+                  <div className={styles.education_level_header}>
+                    <Icon name="target" size={24} />
+                    <span>После 9 классов</span>
+                  </div>
+                  <p>Прием учащихся, окончивших 9 классов школы</p>
+                </div>
+              </label>
+
+              {/* Прием после 11 классов */}
+              <label className={styles.education_level_card}>
+                <input
+                  type="checkbox"
+                  checked={formData.accepts11Class}
+                  onChange={(e) => setFormData(prev => ({ ...prev, accepts11Class: e.target.checked }))}
+                />
+                <div className={styles.education_level_content}>
+                  <div className={styles.education_level_header}>
+                    <Icon name="award" size={24} />
+                    <span>После 11 классов</span>
+                  </div>
+                  <p>Прием выпускников школ с аттестатом о полном среднем образовании</p>
+                </div>
+              </label>
+
+              {/* Требуется ЕГЭ */}
+              <label className={`${styles.education_level_card} ${formData.requiresEge ? styles.selected : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={formData.requiresEge}
+                  onChange={(e) => setFormData(prev => ({ ...prev, requiresEge: e.target.checked }))}
+                />
+                <div className={styles.education_level_content}>
+                  <div className={styles.education_level_header}>
+                    <Icon name="trending-up" size={24} />
+                    <span>Требуется ЕГЭ</span>
+                  </div>
+                  <p>Поступление на основе результатов Единого государственного экзамена</p>
+                </div>
+              </label>
+
+              {/* Минимальный балл ЕГЭ */}
+              {formData.requiresEge && (
+                <div className={styles.ege_score_input}>
+                  <label>Минимальный балл ЕГЭ (из 300)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="300"
+                    value={formData.minEgeScore}
+                    onChange={(e) => setFormData(prev => ({ ...prev, minEgeScore: e.target.value }))}
+                    placeholder="Например: 200"
+                  />
+                </div>
+              )}
+
+              {/* Требуется средний балл */}
+              <label className={`${styles.education_level_card} ${formData.requiresGpa ? styles.selected : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={formData.requiresGpa}
+                  onChange={(e) => setFormData(prev => ({ ...prev, requiresGpa: e.target.checked }))}
+                />
+                <div className={styles.education_level_content}>
+                  <div className={styles.education_level_header}>
+                    <Icon name="clipboard" size={24} />
+                    <span>Требуется средний балл</span>
+                  </div>
+                  <p>Поступление на основе среднего балла диплома</p>
+                </div>
+              </label>
+
+              {/* Минимальный средний балл */}
+              {formData.requiresGpa && (
+                <div className={styles.gpa_score_input}>
+                  <label>Минимальный средний балл (2.0-5.0)</label>
+                  <input
+                    type="number"
+                    min="2.0"
+                    max="5.0"
+                    step="0.1"
+                    value={formData.minGpa}
+                    onChange={(e) => setFormData(prev => ({ ...prev, minGpa: e.target.value }))}
+                    placeholder="Например: 4.0"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

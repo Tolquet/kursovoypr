@@ -25,6 +25,13 @@ model Institute {
   ownerId     Int?
   owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   reviews     Review[]
+  // Образовательные уровни поступления
+  accepts9Class    Boolean  @default(false)  // Прием после 9 классов
+  accepts11Class   Boolean  @default(false)  // Прием после 11 классов
+  requiresEge      Boolean  @default(false)  // Требуется ЕГЭ
+  minEgeScore      Int?                      // Минимальный балл ЕГЭ (из 300)
+  requiresGpa      Boolean  @default(false)  // Требуется средний балл диплома
+  minGpa           Float?                    // Минимальный средний балл (2.0-5.0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -34,14 +41,17 @@ model User {
   email     String   @unique
   name      String?
   password  String
-  userType  String   @default("student")
+  userType  String   @default("student") // student, applicant, school, company
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // Уровень образования пользователя
+  educationLevel     String?  // school-9, school-11, college, university-bachelor, university-master
+  egeScore           Int?     // Балл ЕГЭ (для школьников/абитуриентов)
+  gpa                Float?   // Средний балл диплома (2.0-5.0)
+  currentClass       Int?     // Текущий класс (для школьников)
   company   Company?
   institutes Institute[]
   reviews   Review[]
-
-  @@map("users")
 }
 
 model Company {

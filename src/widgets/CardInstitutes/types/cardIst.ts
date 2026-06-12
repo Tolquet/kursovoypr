@@ -14,6 +14,13 @@ export interface Institutes {
   city?: string;
   minTuition?: number;
   maxTuition?: number;
+  // Образовательные уровни
+  accepts9Class?: boolean;
+  accepts11Class?: boolean;
+  requiresEge?: boolean;
+  minEgeScore?: number;
+  requiresGpa?: boolean;
+  minGpa?: number;
   createdAt?: string;
   updatedAt?: string;
 }

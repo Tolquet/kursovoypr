@@ -26,7 +26,8 @@ export function useUniversalFilter(data: Institutes[], initialFilters?: Partial<
     selectedTypes: initialFilters?.selectedTypes || [],
     selectedCategories: initialFilters?.selectedCategories || [],
     selectedCity: initialFilters?.selectedCity || '',
-    tuitionRange: initialFilters?.tuitionRange || defaultTuitionRange
+    tuitionRange: initialFilters?.tuitionRange || defaultTuitionRange,
+    selectedEducationLevels: initialFilters?.selectedEducationLevels || []
   }));
 
   // Фильтрация данных
@@ -73,6 +74,18 @@ export function useUniversalFilter(data: Institutes[], initialFilters?: Partial<
         }
       }
 
+      // Фильтр по образовательным уровням
+      if (filters.selectedEducationLevels.length > 0) {
+        const matchesEducationLevel = filters.selectedEducationLevels.some(level => {
+          if (level === '9class' && item.accepts9Class) return true;
+          if (level === '11class' && item.accepts11Class) return true;
+          if (level === 'ege' && item.requiresEge) return true;
+          if (level === 'gpa' && item.requiresGpa) return true;
+          return false;
+        });
+        if (!matchesEducationLevel) return false;
+      }
+
       return true;
     });
   }, [data, filters]);
@@ -84,7 +97,8 @@ export function useUniversalFilter(data: Institutes[], initialFilters?: Partial<
       selectedTypes: [],
       selectedCategories: [],
       selectedCity: '',
-      tuitionRange: defaultTuitionRange
+      tuitionRange: defaultTuitionRange,
+      selectedEducationLevels: []
     };
     setFilters(resetState);
   }, [defaultTuitionRange]);

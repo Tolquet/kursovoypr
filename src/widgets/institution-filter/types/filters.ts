@@ -7,6 +7,7 @@ export interface FilterState {
     min: number;
     max: number;
   };
+  selectedEducationLevels: string[]; // 9class, 11class, ege, gpa
 }
 
 export interface FilterOptions {
@@ -27,6 +28,11 @@ export interface FilterPanelProps {
     city?: string;
     minTuition?: number;
     maxTuition?: number;
+    // Образовательные уровни
+    accepts9Class?: boolean;
+    accepts11Class?: boolean;
+    requiresEge?: boolean;
+    requiresGpa?: boolean;
   }>;
   onFilterChange: (filters: FilterState) => void;
   initialFilters?: Partial<FilterState>;

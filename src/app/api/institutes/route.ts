@@ -104,7 +104,14 @@ export async function POST(request: NextRequest) {
       tuition, 
       minTuition,
       maxTuition,
-      categoryIns 
+      categoryIns,
+      // Образовательные уровни
+      accepts9Class,
+      accepts11Class,
+      requiresEge,
+      minEgeScore,
+      requiresGpa,
+      minGpa
     } = body
 
     // Валидация обязательных полей
@@ -173,7 +180,14 @@ export async function POST(request: NextRequest) {
         minTuition: minTuition || null,
         maxTuition: maxTuition || null,
         categoryIns: categoryIns || [],
-        ownerId: userData.id
+        ownerId: userData.id,
+        // Образовательные уровни
+        accepts9Class: accepts9Class || false,
+        accepts11Class: accepts11Class || false,
+        requiresEge: requiresEge || false,
+        minEgeScore: minEgeScore || null,
+        requiresGpa: requiresGpa || false,
+        minGpa: minGpa || null
       }
     })
 

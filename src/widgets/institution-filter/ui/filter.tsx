@@ -34,7 +34,8 @@ export function FilterPanel({
     selectedTypes: initialFilters?.selectedTypes || [],
     selectedCategories: initialFilters?.selectedCategories || [],
     selectedCity: initialFilters?.selectedCity || '',
-    tuitionRange: initialFilters?.tuitionRange || { min: 0, max: 1000000 }
+    tuitionRange: initialFilters?.tuitionRange || { min: 0, max: 1000000 },
+    selectedEducationLevels: initialFilters?.selectedEducationLevels || []
   };
 
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
@@ -175,7 +176,8 @@ export function FilterPanel({
       selectedTypes: [],
       selectedCategories: [],
       selectedCity: '',
-      tuitionRange: { min: tuitionRange.min, max: tuitionRange.max }
+      tuitionRange: { min: tuitionRange.min, max: tuitionRange.max },
+      selectedEducationLevels: []
     };
     onFilterChange(resetFilters);
   };
@@ -233,7 +235,8 @@ export function FilterPanel({
     filters.selectedCategories.length > 0 ||
     filters.selectedCity !== '' ||
     filters.tuitionRange.min !== tuitionRange.min ||
-    filters.tuitionRange.max !== tuitionRange.max;
+    filters.tuitionRange.max !== tuitionRange.max ||
+    filters.selectedEducationLevels.length > 0;
   
   // Получить метки для активных тегов
   const getActiveTags = () => {
@@ -331,6 +334,17 @@ export function FilterPanel({
         >
           <span className="filter-icon"><Icon name="money" size={18} /></span>
           <span>Цена</span>
+        </button>
+
+        <button 
+          className={`filter-btn ${filters.selectedEducationLevels.length > 0 ? 'active' : ''} ${openDropdowns.includes('education') ? 'opened' : ''}`}
+          onClick={() => toggleDropdown('education')}
+        >
+          <span className="filter-icon"><Icon name="target" size={18} /></span>
+          <span>Уровень</span>
+          {filters.selectedEducationLevels.length > 0 && (
+            <span className="filter-count">{filters.selectedEducationLevels.length}</span>
+          )}
         </button>
       </div>
 
@@ -448,6 +462,88 @@ export function FilterPanel({
                   />
                   <span>₽</span>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Education level panel */}
+          {openDropdowns.includes('education') && (
+            <div className="dropdown-panel">
+              <div className="panel-title">
+                <span>Уровень поступления</span>
+              </div>
+              <div className="options-grid">
+                <label 
+                  className={`filter-chip ${
+                    filters.selectedEducationLevels.includes('9class') ? 'selected' : ''
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.selectedEducationLevels.includes('9class')}
+                    onChange={() => {
+                      const newLevels = filters.selectedEducationLevels.includes('9class')
+                        ? filters.selectedEducationLevels.filter(l => l !== '9class')
+                        : [...filters.selectedEducationLevels, '9class'];
+                      updateFilters({ selectedEducationLevels: newLevels });
+                    }}
+                  />
+                  <span className="chip-label">После 9 классов</span>
+                </label>
+
+                <label 
+                  className={`filter-chip ${
+                    filters.selectedEducationLevels.includes('11class') ? 'selected' : ''
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.selectedEducationLevels.includes('11class')}
+                    onChange={() => {
+                      const newLevels = filters.selectedEducationLevels.includes('11class')
+                        ? filters.selectedEducationLevels.filter(l => l !== '11class')
+                        : [...filters.selectedEducationLevels, '11class'];
+                      updateFilters({ selectedEducationLevels: newLevels });
+                    }}
+                  />
+                  <span className="chip-label">После 11 классов</span>
+                </label>
+
+                <label 
+                  className={`filter-chip ${
+                    filters.selectedEducationLevels.includes('ege') ? 'selected' : ''
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.selectedEducationLevels.includes('ege')}
+                    onChange={() => {
+                      const newLevels = filters.selectedEducationLevels.includes('ege')
+                        ? filters.selectedEducationLevels.filter(l => l !== 'ege')
+                        : [...filters.selectedEducationLevels, 'ege'];
+                      updateFilters({ selectedEducationLevels: newLevels });
+                    }}
+                  />
+                  <span className="chip-label">Требуется ЕГЭ</span>
+                </label>
+
+                <label 
+                  className={`filter-chip ${
+                    filters.selectedEducationLevels.includes('gpa') ? 'selected' : ''
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.selectedEducationLevels.includes('gpa')}
+                    onChange={() => {
+                      const newLevels = filters.selectedEducationLevels.includes('gpa')
+                        ? filters.selectedEducationLevels.filter(l => l !== 'gpa')
+                        : [...filters.selectedEducationLevels, 'gpa'];
+                      updateFilters({ selectedEducationLevels: newLevels });
+                    }}
+                  />
+                  <span className="chip-label">Требуется средний балл</span>
+                </label>
               </div>
             </div>
           )}

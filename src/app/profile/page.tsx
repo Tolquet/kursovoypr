@@ -50,6 +50,14 @@ interface CompanyData {
   legalAddress: string;
 }
 
+// Типы для данных образования пользователя
+interface EducationData {
+  educationLevel: string;
+  egeScore: number | null;
+  gpa: number | null;
+  currentClass: number | null;
+}
+
 // Примеры профориентационных тестов
 const CAREER_TESTS: CareerTest[] = [
   {
@@ -128,12 +136,19 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const viewedUserId = searchParams.get('userId');
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'tests' | 'results' | 'institutes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tests' | 'results' | 'institutes' | 'education'>('overview');
   const [userType, setUserType] = useState<string>('student');
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [userInstitutes, setUserInstitutes] = useState<Institute[]>([]);
   const [loadingInstitutes, setLoadingInstitutes] = useState(false);
   const [viewedUserProfile, setViewedUserProfile] = useState<{id: number, name: string, email: string, userType: string} | null>(null);
+  const [educationData, setEducationData] = useState<EducationData>({
+    educationLevel: '',
+    egeScore: null,
+    gpa: null,
+    currentClass: null
+  });
+  const [savingEducation, setSavingEducation] = useState(false);
 
   // Используем тесты для отображения
   const tests = CAREER_TESTS;
@@ -156,6 +171,16 @@ function ProfileContent() {
           setCompanyData(data.company)
           setActiveTab('institutes')
           fetchUserInstitutes()
+        }
+        
+        // Загрузка данных образования
+        if (data.educationLevel || data.egeScore || data.gpa || data.currentClass) {
+          setEducationData({
+            educationLevel: data.educationLevel || '',
+            egeScore: data.egeScore,
+            gpa: data.gpa,
+            currentClass: data.currentClass
+          })
         }
       }
     } catch (error) {
@@ -290,6 +315,28 @@ function ProfileContent() {
     }
   };
 
+  // Сохранение данных образования
+  const handleSaveEducation = async () => {
+    setSavingEducation(true);
+    try {
+      const response = await fetch('/api/users/me/education', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(educationData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при сохранении');
+      }
+
+      alert('Данные образования успешно сохранены!');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Ошибка при сохранении');
+    } finally {
+      setSavingEducation(false);
+    }
+  };
+
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return '#48bb78';
     if (rating >= 4.0) return '#38a169';
@@ -366,6 +413,12 @@ function ProfileContent() {
                 onClick={() => setActiveTab('results')}
               >
                 Результаты
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'education' ? styles.active : ''}`}
+                onClick={() => setActiveTab('education')}
+              >
+                Уровень образования
               </button>
             </>
           )}
@@ -558,6 +611,175 @@ function ProfileContent() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'education' && userType !== 'company' && (
+            <div className={styles.education_tab}>
+              <h2>Ваш уровень образования</h2>
+              <p className={styles.education_description}>
+                Укажите ваш текущий уровень образования, чтобы получать персонализированные рекомендации
+                и находить учебные заведения, которые подходят для поступления.
+              </p>
+
+              <div className={styles.education_form}>
+                {/* Тип образования */}
+                <div className={styles.form_section}>
+                  <h3>Текущий уровень образования</h3>
+                  <div className={styles.education_options}>
+                    <label className={`${styles.education_option} ${educationData.educationLevel === 'school-9' ? styles.selected : ''}`}>
+                      <input
+                        type="radio"
+                        name="educationLevel"
+                        value="school-9"
+                        checked={educationData.educationLevel === 'school-9'}
+                        onChange={(e) => setEducationData(prev => ({ ...prev, educationLevel: e.target.value, currentClass: null }))}
+                      />
+                      <div className={styles.option_content}>
+                        <Icon name="target" size={24} />
+                        <div>
+                          <strong>9 классов</strong>
+                          <p>Окончил 9 классов школы</p>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label className={`${styles.education_option} ${educationData.educationLevel === 'school-11' ? styles.selected : ''}`}>
+                      <input
+                        type="radio"
+                        name="educationLevel"
+                        value="school-11"
+                        checked={educationData.educationLevel === 'school-11'}
+                        onChange={(e) => setEducationData(prev => ({ ...prev, educationLevel: e.target.value }))}
+                      />
+                      <div className={styles.option_content}>
+                        <Icon name="award" size={24} />
+                        <div>
+                          <strong>11 классов</strong>
+                          <p>Окончил 11 классов, есть аттестат о полном среднем образовании</p>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label className={`${styles.education_option} ${educationData.educationLevel === 'college' ? styles.selected : ''}`}>
+                      <input
+                        type="radio"
+                        name="educationLevel"
+                        value="college"
+                        checked={educationData.educationLevel === 'college'}
+                        onChange={(e) => setEducationData(prev => ({ ...prev, educationLevel: e.target.value }))}
+                      />
+                      <div className={styles.option_content}>
+                        <Icon name="building" size={24} />
+                        <div>
+                          <strong>Колледж/Техникум</strong>
+                          <p>Учусь или закончил колледж/техникум</p>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label className={`${styles.education_option} ${educationData.educationLevel === 'university-bachelor' ? styles.selected : ''}`}>
+                      <input
+                        type="radio"
+                        name="educationLevel"
+                        value="university-bachelor"
+                        checked={educationData.educationLevel === 'university-bachelor'}
+                        onChange={(e) => setEducationData(prev => ({ ...prev, educationLevel: e.target.value }))}
+                      />
+                      <div className={styles.option_content}>
+                        <Icon name="university" size={24} />
+                        <div>
+                          <strong>Бакалавриат</strong>
+                          <p>Учусь или закончил бакалавриат</p>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label className={`${styles.education_option} ${educationData.educationLevel === 'university-master' ? styles.selected : ''}`}>
+                      <input
+                        type="radio"
+                        name="educationLevel"
+                        value="university-master"
+                        checked={educationData.educationLevel === 'university-master'}
+                        onChange={(e) => setEducationData(prev => ({ ...prev, educationLevel: e.target.value }))}
+                      />
+                      <div className={styles.option_content}>
+                        <Icon name="university" size={24} />
+                        <div>
+                          <strong>Магистратура</strong>
+                          <p>Учусь или закончил магистратуру</p>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Балл ЕГЭ */}
+                {(educationData.educationLevel === 'school-11' || educationData.educationLevel === 'college') && (
+                  <div className={styles.form_section}>
+                    <h3>Балл ЕГЭ</h3>
+                    <p className={styles.form_hint}>Укажите ваш общий балл ЕГЭ или баллы по отдельным предметам</p>
+                    <div className={styles.score_input}>
+                      <label>Общий балл ЕГЭ (макс. 300)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="300"
+                        value={educationData.egeScore || ''}
+                        onChange={(e) => setEducationData(prev => ({ ...prev, egeScore: parseInt(e.target.value) || null }))}
+                        placeholder="Например: 240"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Средний балл */}
+                {(educationData.educationLevel === 'college' || educationData.educationLevel === 'university-bachelor' || educationData.educationLevel === 'university-master') && (
+                  <div className={styles.form_section}>
+                    <h3>Средний балл диплома</h3>
+                    <p className={styles.form_hint}>Укажите ваш средний балл по диплому (шкала 2.0-5.0)</p>
+                    <div className={styles.score_input}>
+                      <label>Средний балл (2.0-5.0)</label>
+                      <input
+                        type="number"
+                        min="2.0"
+                        max="5.0"
+                        step="0.1"
+                        value={educationData.gpa || ''}
+                        onChange={(e) => setEducationData(prev => ({ ...prev, gpa: parseFloat(e.target.value) || null }))}
+                        placeholder="Например: 4.5"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Текущий класс (для школьников) */}
+                {educationData.educationLevel === '' && (
+                  <div className={styles.form_section}>
+                    <h3>Текущий класс</h3>
+                    <p className={styles.form_hint}>В каком классе вы сейчас учитесь?</p>
+                    <div className={styles.class_selector}>
+                      <select
+                        value={educationData.currentClass || ''}
+                        onChange={(e) => setEducationData(prev => ({ ...prev, currentClass: parseInt(e.target.value) || null }))}
+                      >
+                        <option value="">Выберите класс</option>
+                        {[9, 10, 11].map(cls => (
+                          <option key={cls} value={cls}>{cls} класс</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  className={styles.save_education_button}
+                  onClick={handleSaveEducation}
+                  disabled={savingEducation}
+                >
+                  {savingEducation ? 'Сохранение...' : 'Сохранить данные'}
+                </button>
+              </div>
             </div>
           )}
 
